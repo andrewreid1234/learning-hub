@@ -13,3 +13,5 @@ python3 tools/bundle.py
 ```
 
 Rebuild it and commit it after any change to `index.html`, `hub.js` or anything in `courses/`, so the file here always matches the source.
+
+Back to the [main README](../README.md).
