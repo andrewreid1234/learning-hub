@@ -325,7 +325,7 @@
           },
           {
             id: 'cheat', title: 'Cheat sheet and final quiz', blocks: [
-              p('Use <strong>Print page</strong> in the sidebar to print or save as PDF.'),
+              p('Use <strong>Settings</strong> (the cog, bottom left) &rarr; Print to print or save as PDF.'),
               ol(['Log in, <code>tmux new -s boltz</code>, <code>nvidia-smi</code>.', 'Build the YAML (every protein needs an <code>msa</code> decision), save in <code>~/boltz/input</code>.', 'Generate the command, set the GPU and file, run.', 'Results: <code>~/boltz/output/boltz_results_&lt;name&gt;/predictions/&lt;job&gt;/</code>.', 'Read <code>confidence_*_model_0.json</code> and, if requested, <code>affinity_*.json</code>.', 'Open <code>_model_0.cif</code> in a viewer; compare with a control and with AlphaFold3.']),
               code('export BOLTZ_CACHE=/scratch/drewdog/boltz/cache\nCUDA_VISIBLE_DEVICES=[[2]] \\\n    /scratch/drewdog/boltz/env/bin/boltz predict ~/boltz/input/[[job.yaml]] \\\n    --out_dir ~/boltz/output', 'the baseline command'),
               quiz('Which Boltz feature has no equivalent in AlphaFold3?', ['Co-folding a protein and ligand', 'A predicted binding affinity for a small-molecule ligand', 'Using an MSA'], 1, 'The affinity head is Boltz-2\'s distinguishing feature.'),

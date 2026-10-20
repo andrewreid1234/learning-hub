@@ -45,7 +45,7 @@
 
   /* layout */
   .app{display:grid;grid-template-columns:300px 1fr;min-height:100vh}
-  .side{background:var(--paper-raised);border-right:1px solid var(--line);padding:20px 16px;position:sticky;top:0;height:100vh;overflow:auto}
+  .side{display:flex;flex-direction:column;background:var(--paper-raised);border-right:1px solid var(--line);padding:20px 16px;position:sticky;top:0;height:100vh;overflow:auto}
   .brand{font-weight:600;letter-spacing:.01em;margin:0 0 2px}
   .brand small{display:block;color:var(--muted);font-weight:400;font-size:.8rem}
   .side h3{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:22px 0 6px}
@@ -55,11 +55,10 @@
   .tick{flex:0 0 16px;height:16px;margin-top:3px;border:1.5px solid var(--line-strong);border-radius:50%;font-size:10px;line-height:13px;text-align:center;color:transparent}
   .done .tick{background:var(--good);border-color:var(--good);color:#fff}
   .modtag{font-size:.7rem;color:var(--amber);border:1px solid var(--amber);border-radius:10px;padding:0 6px;margin-left:6px;white-space:nowrap}
-  .osbox .seg{width:100%}.osbox .seg button{flex:1;padding:4px 6px}
   .osblock{border-left:3px solid var(--line-strong);padding-left:14px;margin:1em 0}
+  .osq{background:none;border:1px solid var(--line-strong);color:var(--muted);border-radius:12px;padding:0 10px;margin:0 3px;font-size:.78rem}
+  .osq.on{background:var(--teal);color:#fff;border-color:var(--teal)}
   .oslabel{font-size:.78rem;color:var(--muted);margin-bottom:4px}
-  .tools{display:flex;gap:8px;margin-top:22px}
-  .tools button{flex:1;background:none;border:1px solid var(--line-strong);color:var(--muted);border-radius:6px;padding:5px;font-size:.8rem}
   main{padding:32px clamp(16px,4vw,56px) 80px;max-width:900px;width:100%}
   .topbar{display:none}
   h1{font-size:2rem;line-height:1.2;margin:.2em 0 .3em}
@@ -176,19 +175,23 @@
   .footnote{margin-top:3rem;font-size:.8rem;color:var(--muted)}
 
 
-  .profbox select{width:100%;padding:6px 8px;font-size:.9rem}
-  .prow,.progbox{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-  .prow{margin-bottom:12px}
-  .prow button,.progbox button{flex:1;background:none;border:1px solid var(--line-strong);color:var(--muted);border-radius:6px;padding:4px 6px;font-size:.78rem;white-space:nowrap}
-  .prow button:hover,.progbox button:hover{border-color:var(--teal);color:var(--teal)}
-  .progbox{display:block;margin-top:14px}
-  .progbox summary{cursor:pointer;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-  .progbox button{display:block;width:100%;margin:5px 0;text-align:left;padding:5px 10px}
-  .progbox button.danger{color:var(--danger);border-color:var(--danger)}
-  .progbox .hint{font-size:.72rem;color:var(--muted);margin:8px 0 0}
   .welcome{margin-top:1.6rem;background:var(--paper-raised);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:var(--radius);padding:14px 18px;max-width:34em}
   .wrow{display:flex;gap:8px;margin-top:10px}.wrow input{flex:1}
   .hello{margin:.2em 0 0;color:var(--muted)}
+
+
+  .side .spacer{flex:1;min-height:16px}
+  .side a.cog{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-top:8px;border-top:1px solid var(--line);border-radius:0 0 6px 6px;text-decoration:none;color:var(--muted);position:sticky;bottom:-20px;background:var(--paper-raised)}
+  .side a.cog:hover,.side a.cog.active{color:var(--teal-dark);background:var(--teal-bg)}
+  .side a.cog svg{flex:0 0 20px}
+  .setcard h2{margin:0 0 .4em;padding:0;border:0;font-size:1.1rem}
+  .setcard select{width:100%;padding:7px 10px}
+  .setrow{margin:12px 0}.setlabel{font-size:.85rem;color:var(--muted);margin-bottom:5px}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .progrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .progrow:last-child{border-bottom:0}
+  .btn:disabled{opacity:.4;cursor:default}
+  .small{font-size:.8rem}
 
   @media (max-width: 860px){
     .app{display:block}
@@ -346,7 +349,14 @@
     /* os: {t:'os', win:[blocks], mac:[blocks], linux:[blocks], other:[blocks]} shows the set for the reader's chosen OS */
     os: function (b, ctx) {
       var wrap = el('div', { class: 'osblock' });
-      wrap.appendChild(el('div', { class: 'oslabel' }, 'Showing instructions for <strong>' + esc(OSES.filter(function (o) { return o[0] === osName; })[0][1]) + '</strong>. Change this under &ldquo;Your computer&rdquo; in the sidebar (or the Menu on a phone).'));
+      var lab = el('div', { class: 'oslabel' }, 'Showing instructions for ');
+      OSES.forEach(function (o) {
+        var bt = el('button', { type: 'button', class: 'osq' + (o[0] === osName ? ' on' : '') }, o[1]);
+        bt.onclick = function () { var y = window.scrollY; setOS(o[0]); route_(true); window.scrollTo(0, y); };
+        lab.appendChild(bt);
+      });
+      lab.appendChild(el('span', null, ' <a href="#/settings">Settings</a>'));
+      wrap.appendChild(lab);
       (b[osName] || b.other || []).forEach(function (x) { var r = R[x.t]; if (r) wrap.appendChild(r(x, ctx)); });
       return wrap;
     },
@@ -421,17 +431,6 @@
   function renderSide(route) {
     side.innerHTML = '';
     side.appendChild(el('p', { class: 'brand' }, 'Learning Hub<small>Jamieson Group</small>'));
-    var pb = el('div', { class: 'profbox' }, '<h3>Learning as</h3>');
-    var sel = el('select', { 'aria-label': 'Choose profile' });
-    prof.names.forEach(function (n) { var o = el('option', { value: n }, esc(n)); if (n === prof.cur) o.selected = true; sel.appendChild(o); });
-    sel.onchange = function () { switchProfile(sel.value); };
-    pb.appendChild(sel);
-    var prow = el('div', { class: 'prow' });
-    [['New', function () { var n = prompt('Name for the new profile:'); if (n !== null) newProfile(n); }],
-     ['Rename', function () { var n = prompt('New name for "' + prof.cur + '":', prof.cur); if (n !== null) renameProfile(n); }],
-     ['Delete', deleteProfile]].forEach(function (x) { var b = el('button', { type: 'button' }, x[0]); b.onclick = x[1]; prow.appendChild(b); });
-    pb.appendChild(prow);
-    side.appendChild(pb);
     var home = el('a', { class: 'nav' + (!route.cid ? ' active' : ''), href: '#/' }, '<span>All courses</span>');
     side.appendChild(home);
     if (!route.cid) {
@@ -454,37 +453,93 @@
         });
       });
     });
-    var osBox = el('div', { class: 'osbox' }, '<h3>Your computer</h3>');
-    var osSeg = el('div', { class: 'seg', role: 'group', 'aria-label': 'Your operating system' });
-    OSES.forEach(function (o) {
-      var b = el('button', { type: 'button', class: o[0] === osName ? 'on' : '' }, o[1]);
-      b.onclick = function () { var y = window.scrollY; setOS(o[0]); route_(true); window.scrollTo(0, y); };
-      osSeg.appendChild(b);
+    side.appendChild(el('div', { class: 'spacer' }));
+    var cog = el('a', { class: 'cog' + (route.settings ? ' active' : ''), href: '#/settings', title: 'Settings', 'aria-label': 'Settings' },
+      '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>' +
+      '<span>Settings<small class="cnt">' + esc(prof.cur) + '</small></span>');
+    side.appendChild(cog);
+  }
+
+  function setSeg(label, opts, cur, onpick) {
+    var wrap = el('div', { class: 'setrow' }, '<div class="setlabel">' + label + '</div>');
+    var seg = el('div', { class: 'seg', role: 'group', 'aria-label': label });
+    opts.forEach(function (o) {
+      var b = el('button', { type: 'button', class: o[0] === cur ? 'on' : '' }, o[1]);
+      b.onclick = function () { onpick(o[0]); };
+      seg.appendChild(b);
     });
-    osBox.appendChild(osSeg); side.appendChild(osBox);
-    var tools = el('div', { class: 'tools' });
-    var th = el('button', { type: 'button' }, 'Theme');
-    th.onclick = function () {
-      var cur = document.documentElement.getAttribute('data-theme');
-      var dark = cur ? cur === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      myPrefs().theme = dark ? 'light' : 'dark'; saveProf(); applyPrefs();
-    };
-    var pr = el('button', { type: 'button' }, 'Print page'); pr.onclick = function () { window.print(); };
-    tools.appendChild(th); tools.appendChild(pr);
-    side.appendChild(tools);
-    var pg = el('details', { class: 'progbox' }, '<summary>Progress</summary>');
-    var cc = route.cid && courses.find(function (x) { return x.id === route.cid; });
-    var items = [];
-    if (cc) items.push(['Reset this course', function () { resetCourse(cc); }, 'danger']);
-    items.push(['Reset all progress', resetAll, 'danger']);
-    items.push(['Export my progress', exportProfile]);
+    wrap.appendChild(seg); return wrap;
+  }
+  function renderSettings() {
+    main.innerHTML = '';
+    main.appendChild(el('div', { class: 'crumb' }, 'Learning Hub'));
+    main.appendChild(el('h1', null, 'Settings'));
+    main.appendChild(el('p', { class: 'muted' }, 'Everything here is saved in this browser, for the profile shown below.'));
+
+    /* profile */
+    var c1 = el('section', { class: 'card setcard' }, '<h2>Profile</h2>');
+    c1.appendChild(el('p', { class: 'muted' }, 'A profile keeps your progress, computer and theme separate from other people who use this browser. It is just a name: there are no passwords, and nothing leaves your computer.'));
+    var sel = el('select', { 'aria-label': 'Choose profile' });
+    prof.names.forEach(function (n) { var o = el('option', { value: n }, esc(n)); if (n === prof.cur) o.selected = true; sel.appendChild(o); });
+    sel.onchange = function () { switchProfile(sel.value); };
+    c1.appendChild(el('label', { class: 'f' }, 'Current profile')); c1.appendChild(sel);
+    var row = el('div', { class: 'btnrow' });
+    [['New profile', function () { var n = prompt('Name for the new profile:'); if (n !== null) newProfile(n); }],
+     ['Rename', function () { var n = prompt('New name for "' + prof.cur + '":', prof.cur); if (n !== null) renameProfile(n); }],
+     ['Delete profile', deleteProfile, 'danger']].forEach(function (x) { var b = el('button', { type: 'button', class: 'btn small ' + (x[2] || 'ghost') }, x[0]); b.onclick = x[1]; row.appendChild(b); });
+    c1.appendChild(row); main.appendChild(c1);
+
+    /* computer + appearance */
+    var c2 = el('section', { class: 'card setcard' }, '<h2>Your computer and appearance</h2>');
+    c2.appendChild(setSeg('Your computer (changes the instructions you see)', OSES, osName, function (v) { setOS(v); route_(true); }));
+    var th = myPrefs().theme || 'auto';
+    c2.appendChild(setSeg('Theme', [['auto', 'Match my system'], ['light', 'Light'], ['dark', 'Dark']], th, function (v) {
+      if (v === 'auto') delete myPrefs().theme; else myPrefs().theme = v;
+      saveProf(); applyPrefs(); route_(true);
+    }));
+    main.appendChild(c2);
+
+    /* progress */
+    var c3 = el('section', { class: 'card setcard' }, '<h2>Progress</h2>');
+    var tbl = el('div', { class: 'progtable' });
+    courses.forEach(function (c) {
+      var all = flatLessons(c), n = all.filter(function (x) { return isDone(c.id, x.l.id); }).length;
+      var r = el('div', { class: 'progrow' }, '<span><strong>' + esc(c.title) + '</strong><small class="cnt">' + n + ' of ' + all.length + ' lessons complete</small></span>');
+      var b = el('button', { type: 'button', class: 'btn small danger' }, 'Reset'); b.disabled = n === 0 && !hasChecks(c);
+      b.onclick = function () { resetCourse(c); };
+      r.appendChild(b); tbl.appendChild(r);
+    });
+    c3.appendChild(tbl);
+    var r2 = el('div', { class: 'btnrow' });
+    var ra = el('button', { type: 'button', class: 'btn small danger' }, 'Reset all progress'); ra.onclick = resetAll;
+    var ex = el('button', { type: 'button', class: 'btn small ghost' }, 'Export my progress'); ex.onclick = exportProfile;
     var imp = el('input', { type: 'file', accept: '.json,application/json', style: 'display:none', 'aria-label': 'Import progress file' });
     imp.onchange = function () { if (imp.files[0]) importProfile(imp.files[0]); };
-    items.push(['Import progress', function () { imp.click(); }]);
-    items.forEach(function (x) { var b = el('button', { type: 'button', class: x[2] || '' }, x[0]); b.onclick = x[1]; pg.appendChild(b); });
-    pg.appendChild(imp);
-    pg.appendChild(el('p', { class: 'hint' }, 'Profiles and progress are stored in this browser only. Export a file to move yours to another computer.'));
-    side.appendChild(pg);
+    var ib = el('button', { type: 'button', class: 'btn small ghost' }, 'Import progress'); ib.onclick = function () { imp.click(); };
+    [ra, ex, ib, imp].forEach(function (x) { r2.appendChild(x); });
+    c3.appendChild(r2);
+    c3.appendChild(el('p', { class: 'muted small' }, 'Resetting clears completed lessons and ticked checklists, not your name or preferences. To move your progress to another computer, export a file and import it there.'));
+    main.appendChild(c3);
+
+    /* print */
+    var c4 = el('section', { class: 'card setcard' }, '<h2>Print</h2>');
+    c4.appendChild(el('p', { class: 'muted' }, 'Print any lesson, for example a cheat sheet to pin above your desk. The menu and buttons are left out of the printout.'));
+    var ps = el('select', { 'aria-label': 'Lesson to print' });
+    courses.forEach(function (c) {
+      var g = el('optgroup', { label: c.title });
+      flatLessons(c).forEach(function (x) { g.appendChild(el('option', { value: c.id + '/' + x.l.id }, esc(x.l.title))); });
+      ps.appendChild(g);
+    });
+    var cheats = ['woody/woody-cheatsheet'];
+    if (cheats.length) ps.value = cheats[0];
+    var pbn = el('button', { type: 'button', class: 'btn small' }, 'Open and print');
+    pbn.onclick = function () { location.hash = '#/' + ps.value; setTimeout(function () { window.print(); }, 250); };
+    c4.appendChild(ps); c4.appendChild(el('div', { class: 'btnrow' })).appendChild(pbn);
+    main.appendChild(c4);
+    window.scrollTo(0, 0);
+  }
+  function hasChecks(c) {
+    return !!(store._checks && Object.keys(store._checks).some(function (k) { return k.indexOf(c.id + '/') === 0; }));
   }
 
   function plain(html) { return String(html || '').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\[\[|\]\]/g, ''); }
@@ -578,7 +633,7 @@
     var feats = el('div', { class: 'feats' });
     [['Hands-on', 'Every lesson ends in something you do on the real machine, with a checkpoint so you know it worked.'],
      ['Interactive tools', 'Build input files, explore every parameter, and practise reading real results with built-in widgets.'],
-     ['Made for your computer', 'Windows, Mac or Linux: pick yours once in the sidebar and the instructions follow it.']].forEach(function (f) {
+     ['Made for your computer', 'Windows, Mac or Linux: pick yours once in Settings, or with the switch above any OS-specific steps, and the instructions follow it.']].forEach(function (f) {
       feats.appendChild(el('div', { class: 'feat' }, '<h3>' + f[0] + '</h3><p>' + f[1] + '</p>'));
     });
     main.appendChild(feats);
@@ -656,9 +711,9 @@
   function route_(keep) {
     var parts = location.hash.replace(/^#\/?/, '').split('/');
     var c = courses.find(function (x) { return x.id === parts[0]; });
-    var route = { cid: c && c.id, lid: parts[1] };
+    var route = { cid: c && c.id, lid: parts[1], settings: parts[0] === 'settings' };
     renderSide(route);
-    if (!c) renderHome(); else renderLesson(c, parts[1], keep === true);
+    if (route.settings) renderSettings(); else if (!c) renderHome(); else renderLesson(c, parts[1], keep === true);
     if (keep !== true) document.body.classList.remove('menu');
   }
 
@@ -744,7 +799,7 @@
               co('todo', 'To confirm with the lab', '<p>Whether you can reach Woody from off campus directly or need the University VPN. If you are at home and the connection simply times out, this is the first thing to check. Ask your supervisor.</p>'),
               h('Two tools, two jobs'),
               ul(['A <strong>terminal</strong> for typing commands on Woody.', 'A <strong>file-transfer tool</strong> for moving files between your computer and Woody.']),
-              p('Which ones you use depends on your computer. Choose your operating system in the sidebar. The rest of this course follows it.'),
+              p('Which ones you use depends on your computer. Choose your operating system in Settings (the cog at the bottom of the sidebar), or with the switch above any OS-specific steps. The rest of this course follows it.'),
               check('Checkpoint', ['I have a username and password', 'I know the address, ' + HOST, 'I know whether I need the VPN from home'])
             ]
           },
@@ -922,7 +977,7 @@
           },
           {
             id: 'transfer', title: 'Moving files to and from Woody', blocks: [
-              p('Most of what you do here is uploading an input file and downloading a result. Pick your operating system in the sidebar.'),
+              p('Most of what you do here is uploading an input file and downloading a result. Pick your operating system with the switch just below.'),
               os({
                 win: [
                   h('WinSCP (drag and drop)'),
@@ -1062,7 +1117,7 @@
         id: 'wrapup', title: 'Module 7: Cheat sheet', lessons: [
           {
             id: 'woody-cheatsheet', title: 'One-page cheat sheet', blocks: [
-              p('Everything above, compressed. Use <strong>Print page</strong> in the sidebar and pin it above your desk.'),
+              p('Everything above, compressed. Print it from <strong>Settings</strong> (the cog, bottom left) and pin it above your desk.'),
               table(['Connect and transfer', ''], [
                 ['<code>ssh woody</code>', 'connect (after setting up the shortcut)'],
                 ['WinSCP / Cyberduck / <code>sftp://</code>', 'drag and drop files'],
@@ -2032,7 +2087,7 @@ window.AF3_REAL = {"ffa4_monomer":{"name":"ffa4_monomer","n":297,"tokenChains":[
           },
           {
             id: 'cheatsheet', title: 'Cheat sheet and final quiz', blocks: [
-              p('Use the <strong>Print page</strong> button in the sidebar to print or save this page as a PDF.'),
+              p('Use <strong>Settings</strong> (the cog, bottom left) &rarr; Print to print or save this page as a PDF.'),
               h('One-page recipe'),
               ol_steps(['Log in, <code>tmux new -s af3</code>, <code>nvidia-smi</code> to find an idle GPU.', 'Build the JSON, save in <code>~/af3/input</code>, validate with <code>python3 -m json.tool</code>.', 'Generate the command; set <code>device=N</code> and the file name; run.', 'Wait. Results appear in <code>~/af3/output/&lt;name&gt;/</code>.', 'Read <code>summary_confidences.json</code>: clash, ptm, iptm, ranking_score.', 'Open <code>_model.cif</code> in a viewer coloured by confidence; look at PAE.', 'Compare to a control; add seeds before believing it.']),
               code(DOCKER_BASE, 'the baseline command'),
@@ -2634,7 +2689,7 @@ window.AF3_REAL = {"ffa4_monomer":{"name":"ffa4_monomer","n":297,"tokenChains":[
           },
           {
             id: 'cheat', title: 'Cheat sheet and final quiz', blocks: [
-              p('Use <strong>Print page</strong> in the sidebar to print or save as PDF.'),
+              p('Use <strong>Settings</strong> (the cog, bottom left) &rarr; Print to print or save as PDF.'),
               ol(['Log in, <code>tmux new -s boltz</code>, <code>nvidia-smi</code>.', 'Build the YAML (every protein needs an <code>msa</code> decision), save in <code>~/boltz/input</code>.', 'Generate the command, set the GPU and file, run.', 'Results: <code>~/boltz/output/boltz_results_&lt;name&gt;/predictions/&lt;job&gt;/</code>.', 'Read <code>confidence_*_model_0.json</code> and, if requested, <code>affinity_*.json</code>.', 'Open <code>_model_0.cif</code> in a viewer; compare with a control and with AlphaFold3.']),
               code('export BOLTZ_CACHE=/scratch/drewdog/boltz/cache\nCUDA_VISIBLE_DEVICES=[[2]] \\\n    /scratch/drewdog/boltz/env/bin/boltz predict ~/boltz/input/[[job.yaml]] \\\n    --out_dir ~/boltz/output', 'the baseline command'),
               quiz('Which Boltz feature has no equivalent in AlphaFold3?', ['Co-folding a protein and ligand', 'A predicted binding affinity for a small-molecule ligand', 'Using an MSA'], 1, 'The affinity head is Boltz-2\'s distinguishing feature.'),

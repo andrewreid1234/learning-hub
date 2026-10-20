@@ -130,46 +130,59 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
   // OS switch
   location.hash = '#/woody/connecting'; await tick();
   var mainEl = document.getElementById('main');
-  Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Windows'; }).click(); await tick();
+  Array.from(document.querySelectorAll('.osq')).find(function (b) { return b.textContent === 'Windows'; }).click(); await tick();
   ok('os win', /WinSCP/.test(mainEl.querySelector('.osblock').textContent) && !/Cyberduck/.test(mainEl.querySelector('.osblock').textContent) && !/scp/.test(mainEl.querySelector('.osblock').textContent), mainEl.querySelector('.osblock').textContent);
-  Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Mac'; }).click(); await tick();
+  Array.from(document.querySelectorAll('.osq')).find(function (b) { return b.textContent === 'Mac'; }).click(); await tick();
   ok('os mac', /Cyberduck/.test(mainEl.querySelector('.osblock').textContent) && !/WinSCP/.test(mainEl.querySelector('.osblock').textContent));
-  Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Linux'; }).click(); await tick();
+  Array.from(document.querySelectorAll('.osq')).find(function (b) { return b.textContent === 'Linux'; }).click(); await tick();
   ok('os linux', /sftp:\/\//.test(mainEl.querySelector('.osblock').textContent));
   location.hash = '#/woody/transfer'; await tick();
   ok('os in transfer', !!mainEl.querySelector('.osblock') && /rsync/.test(mainEl.textContent));
   location.hash = '#/woody/long-jobs'; await tick();
   ok('woody links resolve', Array.from(document.querySelectorAll('#main a[href^="#/"]')).every(function (a) { var P = a.getAttribute('href').split('/'); return !!document.querySelector('#side a[href="#/' + P[1] + '/' + P[2] + '"]') || P[1] !== 'woody'; }));
 
-  // ---- profiles, reset, prefs ----
-  window.confirm = function () { return true; };
+  // ---- settings page: profiles, reset, prefs ----
+  window.confirm = function () { return true; }; window.alert = function () {};
   function btn(scope, label) { return Array.from(scope.querySelectorAll('button')).find(function (b) { return b.textContent === label; }); }
-  var sideEl = document.getElementById('side');
-  location.hash = '#/woody/what-is-woody'; await tick();
-  btn(document.getElementById('main'), 'Mark complete').click(); await tick();
+  var sideEl = document.getElementById('side'), mainEl2 = document.getElementById('main');
+  async function go(h) { location.hash = h; await tick(); }
+  function opts() { return Array.from(mainEl2.querySelectorAll('.setcard select')[0].options).map(function (o) { return o.value; }); }
+  function cur() { return mainEl2.querySelector('.setcard select').value; }
+  ok('cog in sidebar', !!sideEl.querySelector('a.cog[href="#/settings"]') && !sideEl.querySelector('.profbox') && !sideEl.querySelector('.osbox'));
+  await go('#/woody/what-is-woody');
+  btn(mainEl2, 'Mark complete').click(); await tick();
   ok('progress saved', sideEl.querySelectorAll('a.nav.done').length === 1, sideEl.querySelectorAll('a.nav.done').length);
+  await go('#/settings');
+  ok('settings sections', ['Profile', 'Your computer and appearance', 'Progress', 'Print'].every(function (h) { return Array.from(mainEl2.querySelectorAll('h2')).some(function (x) { return x.textContent === h; }); }));
   window.prompt = function () { return 'Alice'; };
-  btn(sideEl, 'New').click(); await tick();
-  ok('new profile is empty and selected', sideEl.querySelector('.profbox select').value === 'Alice' && sideEl.querySelectorAll('a.nav.done').length === 0);
-  location.hash = '#/woody/what-is-woody'; await tick();
-  btn(document.getElementById('main'), 'Mark complete').click(); await tick();
-  btn(document.getElementById('main'), 'Mark complete'); // may move on
-  var sel = sideEl.querySelector('.profbox select'); sel.value = 'Guest'; sel.onchange(); await tick();
-  location.hash = '#/woody/what-is-woody'; await tick();
-  ok('guest progress kept separate', sideEl.querySelectorAll('a.nav.done').length === 1 && sideEl.querySelector('.profbox select').value === 'Guest');
-  btn(sideEl.querySelector('.progbox'), 'Reset this course').click(); await tick();
-  ok('reset course clears', sideEl.querySelectorAll('a.nav.done').length === 0);
+  btn(mainEl2, 'New profile').click(); await tick();
+  ok('new profile selected, empty', cur() === 'Alice' && mainEl2.textContent.indexOf('0 of 16 lessons complete') >= 0);
+  var sel = mainEl2.querySelector('.setcard select'); sel.value = 'Guest'; sel.onchange(); await tick();
+  ok('guest progress kept separate', cur() === 'Guest' && mainEl2.textContent.indexOf('1 of 16 lessons complete') >= 0);
+  // theme + os prefs are per profile
+  btn(mainEl2, 'Dark').click(); await tick();
+  ok('theme dark applied', document.documentElement.getAttribute('data-theme') === 'dark');
+  btn(mainEl2, 'Windows').click(); await tick();
+  sel = mainEl2.querySelector('.setcard select'); sel.value = 'Alice'; sel.onchange(); await tick();
+  ok('prefs per profile', document.documentElement.getAttribute('data-theme') !== 'dark' || cur() === 'Alice');
+  sel = mainEl2.querySelector('.setcard select'); sel.value = 'Guest'; sel.onchange(); await tick();
+  ok('guest theme restored', document.documentElement.getAttribute('data-theme') === 'dark');
+  btn(mainEl2, 'Match my system').click(); await tick();
+  ok('theme auto', !document.documentElement.getAttribute('data-theme'));
+  Array.from(mainEl2.querySelectorAll('.progrow')).find(function (r) { return r.textContent.indexOf('Using Woody') >= 0; }).querySelector('button').click(); await tick();
+  ok('reset course clears', mainEl2.textContent.indexOf('0 of 16 lessons complete') >= 0 && sideEl.querySelectorAll('a.nav.done').length === 0);
   window.prompt = function () { return 'Bob'; };
-  btn(sideEl, 'Rename').click(); await tick();
-  ok('rename', sideEl.querySelector('.profbox select').value === 'Bob' && !Array.from(sideEl.querySelectorAll('option')).some(function (o) { return o.value === 'Guest'; }));
-  window.prompt = function () { return 'alice'; }; window.alert = function () {};
-  var before = sideEl.querySelectorAll('option').length; btn(sideEl, 'New').click(); await tick();
-  ok('duplicate name refused', sideEl.querySelectorAll('option').length === before);
-  btn(sideEl, 'Delete').click(); await tick();
-  ok('delete profile', sideEl.querySelectorAll('option').length === before - 1);
-  location.hash = '#/'; await tick();
-  btn(sideEl.querySelector('.progbox'), 'Reset all progress').click(); await tick();
-  ok('reset all', document.getElementById('main').textContent.indexOf('0 of 16 complete') >= 0);
+  btn(mainEl2, 'Rename').click(); await tick();
+  ok('rename', cur() === 'Bob' && opts().indexOf('Guest') < 0);
+  window.prompt = function () { return 'alice'; };
+  var n0 = opts().length; btn(mainEl2, 'New profile').click(); await tick();
+  ok('duplicate name refused', opts().length === n0);
+  btn(mainEl2, 'Delete profile').click(); await tick();
+  ok('delete profile', opts().length === n0 - 1);
+  await go('#/woody/what-is-woody'); btn(mainEl2, 'Mark complete').click(); await tick();
+  await go('#/settings'); btn(mainEl2, 'Reset all progress').click(); await tick();
+  ok('reset all', mainEl2.textContent.indexOf('1 of 16') < 0);
+  var pr = mainEl2.querySelectorAll('.setcard select')[1]; ok('print picker lists lessons', pr && pr.options.length >= 50, pr && pr.options.length);
   var allText = ''; for (var q = 0; q < ids.length; q++) { location.hash = ids[q]; await tick(); allText += document.getElementById('main').textContent; }
   ok('no raw [[', allText.indexOf('[[') < 0);
   var x = new XMLHttpRequest(); x.open('POST', '/report'); x.send(JSON.stringify(R));

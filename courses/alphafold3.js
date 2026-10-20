@@ -406,7 +406,7 @@
           },
           {
             id: 'cheatsheet', title: 'Cheat sheet and final quiz', blocks: [
-              p('Use the <strong>Print page</strong> button in the sidebar to print or save this page as a PDF.'),
+              p('Use <strong>Settings</strong> (the cog, bottom left) &rarr; Print to print or save this page as a PDF.'),
               h('One-page recipe'),
               ol_steps(['Log in, <code>tmux new -s af3</code>, <code>nvidia-smi</code> to find an idle GPU.', 'Build the JSON, save in <code>~/af3/input</code>, validate with <code>python3 -m json.tool</code>.', 'Generate the command; set <code>device=N</code> and the file name; run.', 'Wait. Results appear in <code>~/af3/output/&lt;name&gt;/</code>.', 'Read <code>summary_confidences.json</code>: clash, ptm, iptm, ranking_score.', 'Open <code>_model.cif</code> in a viewer coloured by confidence; look at PAE.', 'Compare to a control; add seeds before believing it.']),
               code(DOCKER_BASE, 'the baseline command'),

@@ -63,7 +63,7 @@
               co('todo', 'To confirm with the lab', '<p>Whether you can reach Woody from off campus directly or need the University VPN. If you are at home and the connection simply times out, this is the first thing to check. Ask your supervisor.</p>'),
               h('Two tools, two jobs'),
               ul(['A <strong>terminal</strong> for typing commands on Woody.', 'A <strong>file-transfer tool</strong> for moving files between your computer and Woody.']),
-              p('Which ones you use depends on your computer. Choose your operating system in the sidebar. The rest of this course follows it.'),
+              p('Which ones you use depends on your computer. Choose your operating system in Settings (the cog at the bottom of the sidebar), or with the switch above any OS-specific steps. The rest of this course follows it.'),
               check('Checkpoint', ['I have a username and password', 'I know the address, ' + HOST, 'I know whether I need the VPN from home'])
             ]
           },
@@ -241,7 +241,7 @@
           },
           {
             id: 'transfer', title: 'Moving files to and from Woody', blocks: [
-              p('Most of what you do here is uploading an input file and downloading a result. Pick your operating system in the sidebar.'),
+              p('Most of what you do here is uploading an input file and downloading a result. Pick your operating system with the switch just below.'),
               os({
                 win: [
                   h('WinSCP (drag and drop)'),
@@ -381,7 +381,7 @@
         id: 'wrapup', title: 'Module 7: Cheat sheet', lessons: [
           {
             id: 'woody-cheatsheet', title: 'One-page cheat sheet', blocks: [
-              p('Everything above, compressed. Use <strong>Print page</strong> in the sidebar and pin it above your desk.'),
+              p('Everything above, compressed. Print it from <strong>Settings</strong> (the cog, bottom left) and pin it above your desk.'),
               table(['Connect and transfer', ''], [
                 ['<code>ssh woody</code>', 'connect (after setting up the shortcut)'],
                 ['WinSCP / Cyberduck / <code>sftp://</code>', 'drag and drop files'],

@@ -131,7 +131,14 @@
     /* os: {t:'os', win:[blocks], mac:[blocks], linux:[blocks], other:[blocks]} shows the set for the reader's chosen OS */
     os: function (b, ctx) {
       var wrap = el('div', { class: 'osblock' });
-      wrap.appendChild(el('div', { class: 'oslabel' }, 'Showing instructions for <strong>' + esc(OSES.filter(function (o) { return o[0] === osName; })[0][1]) + '</strong>. Change this under &ldquo;Your computer&rdquo; in the sidebar (or the Menu on a phone).'));
+      var lab = el('div', { class: 'oslabel' }, 'Showing instructions for ');
+      OSES.forEach(function (o) {
+        var bt = el('button', { type: 'button', class: 'osq' + (o[0] === osName ? ' on' : '') }, o[1]);
+        bt.onclick = function () { var y = window.scrollY; setOS(o[0]); route_(true); window.scrollTo(0, y); };
+        lab.appendChild(bt);
+      });
+      lab.appendChild(el('span', null, ' <a href="#/settings">Settings</a>'));
+      wrap.appendChild(lab);
       (b[osName] || b.other || []).forEach(function (x) { var r = R[x.t]; if (r) wrap.appendChild(r(x, ctx)); });
       return wrap;
     },
@@ -206,17 +213,6 @@
   function renderSide(route) {
     side.innerHTML = '';
     side.appendChild(el('p', { class: 'brand' }, 'Learning Hub<small>Jamieson Group</small>'));
-    var pb = el('div', { class: 'profbox' }, '<h3>Learning as</h3>');
-    var sel = el('select', { 'aria-label': 'Choose profile' });
-    prof.names.forEach(function (n) { var o = el('option', { value: n }, esc(n)); if (n === prof.cur) o.selected = true; sel.appendChild(o); });
-    sel.onchange = function () { switchProfile(sel.value); };
-    pb.appendChild(sel);
-    var prow = el('div', { class: 'prow' });
-    [['New', function () { var n = prompt('Name for the new profile:'); if (n !== null) newProfile(n); }],
-     ['Rename', function () { var n = prompt('New name for "' + prof.cur + '":', prof.cur); if (n !== null) renameProfile(n); }],
-     ['Delete', deleteProfile]].forEach(function (x) { var b = el('button', { type: 'button' }, x[0]); b.onclick = x[1]; prow.appendChild(b); });
-    pb.appendChild(prow);
-    side.appendChild(pb);
     var home = el('a', { class: 'nav' + (!route.cid ? ' active' : ''), href: '#/' }, '<span>All courses</span>');
     side.appendChild(home);
     if (!route.cid) {
@@ -239,37 +235,93 @@
         });
       });
     });
-    var osBox = el('div', { class: 'osbox' }, '<h3>Your computer</h3>');
-    var osSeg = el('div', { class: 'seg', role: 'group', 'aria-label': 'Your operating system' });
-    OSES.forEach(function (o) {
-      var b = el('button', { type: 'button', class: o[0] === osName ? 'on' : '' }, o[1]);
-      b.onclick = function () { var y = window.scrollY; setOS(o[0]); route_(true); window.scrollTo(0, y); };
-      osSeg.appendChild(b);
+    side.appendChild(el('div', { class: 'spacer' }));
+    var cog = el('a', { class: 'cog' + (route.settings ? ' active' : ''), href: '#/settings', title: 'Settings', 'aria-label': 'Settings' },
+      '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>' +
+      '<span>Settings<small class="cnt">' + esc(prof.cur) + '</small></span>');
+    side.appendChild(cog);
+  }
+
+  function setSeg(label, opts, cur, onpick) {
+    var wrap = el('div', { class: 'setrow' }, '<div class="setlabel">' + label + '</div>');
+    var seg = el('div', { class: 'seg', role: 'group', 'aria-label': label });
+    opts.forEach(function (o) {
+      var b = el('button', { type: 'button', class: o[0] === cur ? 'on' : '' }, o[1]);
+      b.onclick = function () { onpick(o[0]); };
+      seg.appendChild(b);
     });
-    osBox.appendChild(osSeg); side.appendChild(osBox);
-    var tools = el('div', { class: 'tools' });
-    var th = el('button', { type: 'button' }, 'Theme');
-    th.onclick = function () {
-      var cur = document.documentElement.getAttribute('data-theme');
-      var dark = cur ? cur === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      myPrefs().theme = dark ? 'light' : 'dark'; saveProf(); applyPrefs();
-    };
-    var pr = el('button', { type: 'button' }, 'Print page'); pr.onclick = function () { window.print(); };
-    tools.appendChild(th); tools.appendChild(pr);
-    side.appendChild(tools);
-    var pg = el('details', { class: 'progbox' }, '<summary>Progress</summary>');
-    var cc = route.cid && courses.find(function (x) { return x.id === route.cid; });
-    var items = [];
-    if (cc) items.push(['Reset this course', function () { resetCourse(cc); }, 'danger']);
-    items.push(['Reset all progress', resetAll, 'danger']);
-    items.push(['Export my progress', exportProfile]);
+    wrap.appendChild(seg); return wrap;
+  }
+  function renderSettings() {
+    main.innerHTML = '';
+    main.appendChild(el('div', { class: 'crumb' }, 'Learning Hub'));
+    main.appendChild(el('h1', null, 'Settings'));
+    main.appendChild(el('p', { class: 'muted' }, 'Everything here is saved in this browser, for the profile shown below.'));
+
+    /* profile */
+    var c1 = el('section', { class: 'card setcard' }, '<h2>Profile</h2>');
+    c1.appendChild(el('p', { class: 'muted' }, 'A profile keeps your progress, computer and theme separate from other people who use this browser. It is just a name: there are no passwords, and nothing leaves your computer.'));
+    var sel = el('select', { 'aria-label': 'Choose profile' });
+    prof.names.forEach(function (n) { var o = el('option', { value: n }, esc(n)); if (n === prof.cur) o.selected = true; sel.appendChild(o); });
+    sel.onchange = function () { switchProfile(sel.value); };
+    c1.appendChild(el('label', { class: 'f' }, 'Current profile')); c1.appendChild(sel);
+    var row = el('div', { class: 'btnrow' });
+    [['New profile', function () { var n = prompt('Name for the new profile:'); if (n !== null) newProfile(n); }],
+     ['Rename', function () { var n = prompt('New name for "' + prof.cur + '":', prof.cur); if (n !== null) renameProfile(n); }],
+     ['Delete profile', deleteProfile, 'danger']].forEach(function (x) { var b = el('button', { type: 'button', class: 'btn small ' + (x[2] || 'ghost') }, x[0]); b.onclick = x[1]; row.appendChild(b); });
+    c1.appendChild(row); main.appendChild(c1);
+
+    /* computer + appearance */
+    var c2 = el('section', { class: 'card setcard' }, '<h2>Your computer and appearance</h2>');
+    c2.appendChild(setSeg('Your computer (changes the instructions you see)', OSES, osName, function (v) { setOS(v); route_(true); }));
+    var th = myPrefs().theme || 'auto';
+    c2.appendChild(setSeg('Theme', [['auto', 'Match my system'], ['light', 'Light'], ['dark', 'Dark']], th, function (v) {
+      if (v === 'auto') delete myPrefs().theme; else myPrefs().theme = v;
+      saveProf(); applyPrefs(); route_(true);
+    }));
+    main.appendChild(c2);
+
+    /* progress */
+    var c3 = el('section', { class: 'card setcard' }, '<h2>Progress</h2>');
+    var tbl = el('div', { class: 'progtable' });
+    courses.forEach(function (c) {
+      var all = flatLessons(c), n = all.filter(function (x) { return isDone(c.id, x.l.id); }).length;
+      var r = el('div', { class: 'progrow' }, '<span><strong>' + esc(c.title) + '</strong><small class="cnt">' + n + ' of ' + all.length + ' lessons complete</small></span>');
+      var b = el('button', { type: 'button', class: 'btn small danger' }, 'Reset'); b.disabled = n === 0 && !hasChecks(c);
+      b.onclick = function () { resetCourse(c); };
+      r.appendChild(b); tbl.appendChild(r);
+    });
+    c3.appendChild(tbl);
+    var r2 = el('div', { class: 'btnrow' });
+    var ra = el('button', { type: 'button', class: 'btn small danger' }, 'Reset all progress'); ra.onclick = resetAll;
+    var ex = el('button', { type: 'button', class: 'btn small ghost' }, 'Export my progress'); ex.onclick = exportProfile;
     var imp = el('input', { type: 'file', accept: '.json,application/json', style: 'display:none', 'aria-label': 'Import progress file' });
     imp.onchange = function () { if (imp.files[0]) importProfile(imp.files[0]); };
-    items.push(['Import progress', function () { imp.click(); }]);
-    items.forEach(function (x) { var b = el('button', { type: 'button', class: x[2] || '' }, x[0]); b.onclick = x[1]; pg.appendChild(b); });
-    pg.appendChild(imp);
-    pg.appendChild(el('p', { class: 'hint' }, 'Profiles and progress are stored in this browser only. Export a file to move yours to another computer.'));
-    side.appendChild(pg);
+    var ib = el('button', { type: 'button', class: 'btn small ghost' }, 'Import progress'); ib.onclick = function () { imp.click(); };
+    [ra, ex, ib, imp].forEach(function (x) { r2.appendChild(x); });
+    c3.appendChild(r2);
+    c3.appendChild(el('p', { class: 'muted small' }, 'Resetting clears completed lessons and ticked checklists, not your name or preferences. To move your progress to another computer, export a file and import it there.'));
+    main.appendChild(c3);
+
+    /* print */
+    var c4 = el('section', { class: 'card setcard' }, '<h2>Print</h2>');
+    c4.appendChild(el('p', { class: 'muted' }, 'Print any lesson, for example a cheat sheet to pin above your desk. The menu and buttons are left out of the printout.'));
+    var ps = el('select', { 'aria-label': 'Lesson to print' });
+    courses.forEach(function (c) {
+      var g = el('optgroup', { label: c.title });
+      flatLessons(c).forEach(function (x) { g.appendChild(el('option', { value: c.id + '/' + x.l.id }, esc(x.l.title))); });
+      ps.appendChild(g);
+    });
+    var cheats = ['woody/woody-cheatsheet'];
+    if (cheats.length) ps.value = cheats[0];
+    var pbn = el('button', { type: 'button', class: 'btn small' }, 'Open and print');
+    pbn.onclick = function () { location.hash = '#/' + ps.value; setTimeout(function () { window.print(); }, 250); };
+    c4.appendChild(ps); c4.appendChild(el('div', { class: 'btnrow' })).appendChild(pbn);
+    main.appendChild(c4);
+    window.scrollTo(0, 0);
+  }
+  function hasChecks(c) {
+    return !!(store._checks && Object.keys(store._checks).some(function (k) { return k.indexOf(c.id + '/') === 0; }));
   }
 
   function plain(html) { return String(html || '').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\[\[|\]\]/g, ''); }
@@ -363,7 +415,7 @@
     var feats = el('div', { class: 'feats' });
     [['Hands-on', 'Every lesson ends in something you do on the real machine, with a checkpoint so you know it worked.'],
      ['Interactive tools', 'Build input files, explore every parameter, and practise reading real results with built-in widgets.'],
-     ['Made for your computer', 'Windows, Mac or Linux: pick yours once in the sidebar and the instructions follow it.']].forEach(function (f) {
+     ['Made for your computer', 'Windows, Mac or Linux: pick yours once in Settings, or with the switch above any OS-specific steps, and the instructions follow it.']].forEach(function (f) {
       feats.appendChild(el('div', { class: 'feat' }, '<h3>' + f[0] + '</h3><p>' + f[1] + '</p>'));
     });
     main.appendChild(feats);
@@ -441,9 +493,9 @@
   function route_(keep) {
     var parts = location.hash.replace(/^#\/?/, '').split('/');
     var c = courses.find(function (x) { return x.id === parts[0]; });
-    var route = { cid: c && c.id, lid: parts[1] };
+    var route = { cid: c && c.id, lid: parts[1], settings: parts[0] === 'settings' };
     renderSide(route);
-    if (!c) renderHome(); else renderLesson(c, parts[1], keep === true);
+    if (route.settings) renderSettings(); else if (!c) renderHome(); else renderLesson(c, parts[1], keep === true);
     if (keep !== true) document.body.classList.remove('menu');
   }
 
