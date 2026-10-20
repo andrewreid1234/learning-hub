@@ -1,0 +1,136 @@
+<!doctype html><meta charset="utf-8"><title>selftest</title>
+<body><div class="app"><nav class="side" id="side"></nav><main id="main"></main></div><button id="menuBtn"></button>
+<script src="../hub.js"></script>
+<script src="../courses/real-examples.js"></script>
+<script src="../courses/alphafold3-widgets.js"></script>
+<script src="../courses/alphafold3.js"></script>
+<script src="../courses/boltz-widgets.js"></script>
+<script src="../courses/boltz.js"></script>
+<script>
+var R = {errors: [], lessons: 0, checks: []};
+window.onerror = function (m, s, l) { R.errors.push(m + ' @' + (s||'').split('/').pop() + ':' + l); };
+function ok(name, cond, extra) { R.checks.push([cond ? 'PASS' : 'FAIL', name, extra || '']); }
+function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
+(async function () {
+  Hub.start();
+  var ids = [];
+  document.querySelectorAll('#side a.nav').forEach(function (a) { var h = a.getAttribute('href'); if (h.split('/').length === 3) ids.push(h); });
+  for (var i = 0; i < ids.length; i++) {
+    location.hash = ids[i]; await tick();
+    var m = document.getElementById('main'); R.lessons++;
+    if (/Widget error|Missing widget/.test(m.textContent)) R.errors.push('widget problem in ' + ids[i] + ': ' + m.textContent.match(/(Widget error|Missing widget)[^\n]{0,80}/)[0]);
+    if (!m.querySelector('h1')) R.errors.push('no h1 ' + ids[i]);
+  }
+  ok('lessons rendered', R.lessons >= 15, R.lessons);
+
+  // JSON builder presets
+  location.hash = '#/alphafold3/ubiquitin'; await tick();
+  var card = Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('Input JSON builder') >= 0; });
+  function preset(label) { Array.from(card.querySelectorAll('.chips button')).find(function (b) { return b.textContent === label; }).click(); }
+  function out() { return card.querySelector('.codewrap pre').textContent; }
+  preset('Example: ubiquitin'); await tick();
+  var j = JSON.parse(out());
+  ok('ubiquitin json', j.name === 'ubiquitin_monomer' && j.modelSeeds[0] === 42 && j.sequences[0].protein.id === 'A' && j.sequences[0].protein.sequence.length === 76 && j.version === 4);
+  ok('key order', Object.keys(j).join() === 'name,sequences,modelSeeds,dialect,version', Object.keys(j).join());
+  preset('Example: FFA4 + TUG-891'); await tick();
+  j = JSON.parse(out());
+  ok('ffa4 chains', j.sequences.length === 2 && j.sequences[0].protein.sequence.length === 297 && j.sequences[1].ligand.id === 'B' && j.sequences[1].ligand.smiles === 'Cc1ccc(cc1)c2ccc(cc2COc3ccc(cc3)CCC(=O)O)F');
+  ok('no errors shown', !card.querySelector('.msgs .err'), card.querySelector('.msgs').textContent);
+  preset('Example: homodimer (2 copies)'); await tick();
+  j = JSON.parse(out());
+  ok('homodimer ids list', Array.isArray(j.sequences[0].protein.id) && j.sequences[0].protein.id.join() === 'A,B');
+  // validation: bad seq
+  preset('Blank protein'); await tick();
+  ok('blank flagged', !!card.querySelector('.msgs .err'));
+  var ta = card.querySelector('textarea'); ta.value = '>sp|P0CG48\nMQIF VKT1\nxyz'; ta.oninput(); await tick();
+  ok('bad letters flagged', /unexpected letters/.test(card.querySelector('.msgs').textContent), card.querySelector('.msgs').textContent);
+  ta.value = 'MQIFVKT'; ta.oninput(); await tick();
+  ok('clean seq valid', !card.querySelector('.msgs .err'));
+  // ligand backslash
+  preset('Template: protein + macrocycle'); await tick();
+  var tas = card.querySelectorAll('textarea'); tas[0].value = 'MQIFVKTLTGK'; tas[0].oninput(); tas[1].value = 'C/C=C\\C(=O)N1CC1'; tas[1].oninput(); await tick();
+  j = JSON.parse(out());
+  ok('backslash roundtrip', j.sequences[1].ligand.smiles === 'C/C=C\\C(=O)N1CC1', out().slice(-200));
+
+  // command builder
+  location.hash = '#/alphafold3/command-builder'; await tick();
+  var cb = Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('Command builder') >= 0; });
+  function txt() { return Array.from(cb.querySelectorAll('pre')).map(function (p) { return p.textContent; }).join('\n----\n'); }
+  ok('default has device', /--gpus device=2/.test(txt()));
+  Array.from(cb.querySelectorAll('.chips button')).find(function (b) { return /macrocycle/.test(b.textContent); }).click(); await tick();
+  var t = txt();
+  ok('macro stage1', /--run_inference=false/.test(t) && /--run_data_pipeline=false/.test(t) && /_data\.json/.test(t) && /--num_seeds=5/.test(t) && /--num_diffusion_samples=10/.test(t) && /conformer_max_iterations=1000/.test(t), t);
+  var s1 = cb.querySelectorAll('pre')[0].textContent; ok('stage1 no gpu', !/--gpus/.test(s1), s1);
+  Array.from(cb.querySelectorAll('.chips button')).find(function (b) { return /Large target/.test(b.textContent); }).click(); await tick();
+  ok('unified env', /TF_FORCE_UNIFIED_MEMORY=true/.test(txt()) && /XLA_CLIENT_MEM_FRACTION=3.2/.test(txt()));
+
+  // results trainer
+  location.hash = '#/alphafold3/confidence'; await tick();
+  var rt = Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('Read a real result') >= 0; });
+  ok('trainer mono', /0\.91/.test(rt.textContent) && rt.querySelectorAll('canvas').length === 2);
+  rt.querySelectorAll('.chips button')[1].click(); await tick();
+  ok('trainer complex', /0\.95/.test(rt.textContent) && /receptor vs ligand/.test(rt.textContent) && /Mean protein pLDDT/.test(rt.textContent), rt.textContent.slice(0, 300));
+  var m2 = rt.textContent.match(/Their mean here is (\d+\.\d)/); ok('pae mean parsed', !!m2, m2 && m2[1]);
+  var sc = Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('How ranking_score is made') >= 0; });
+  ok('score calc 0.95', /0\.95/.test(sc.querySelector('.mono').textContent), sc.querySelector('.mono').textContent);
+  // triage
+  location.hash = '#/alphafold3/triage'; await tick();
+  var tr = document.querySelector('.card');
+  for (var k = 0; k < 6; k++) { tr.querySelectorAll('button.btn')[0].click(); await tick(); var nx = Array.from(tr.querySelectorAll('button')).find(function (b) { return /Next case|Finish/.test(b.textContent); }); nx.click(); await tick(); }
+  ok('triage finished', /Finished: \d \/ 6/.test(tr.textContent), tr.textContent.slice(0, 120));
+  // quiz + progress
+  location.hash = '#/alphafold3/what-is-af3'; await tick();
+  var q = document.querySelector('.quiz'); q.querySelectorAll('.opt')[1].click();
+  ok('quiz correct', q.querySelector('.opt.right') === q.querySelectorAll('.opt')[1] && /Correct/.test(q.querySelector('.why').textContent));
+  document.querySelector('.nav2 button').click(); await tick();
+  ok('advanced + progress', location.hash === '#/alphafold3/vocab');
+  // code block copy strips markers
+  location.hash = '#/alphafold3/ubiquitin'; await tick();
+  var cw = document.querySelector('.codewrap pre'); ok('swap markers rendered', true);
+  var allpre = Array.from(document.querySelectorAll('pre')).map(function(p){return p.textContent}).join('');
+  ok('no raw [[ ]] shown', allpre.indexOf('[[') < 0 && allpre.indexOf(']]') < 0);
+  // skippable banner
+  location.hash = '#/alphafold3/get-on-woody'; await tick();
+  ok('skip banner', /skip to/i.test(document.getElementById('main').textContent));
+
+  // ---- Boltz + OS tests ----
+  location.hash = '#/boltz/first-run'; await tick();
+  var bc = Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('Boltz input (YAML) builder') >= 0; });
+  function bpreset(l) { Array.from(bc.querySelectorAll('.chips button')).find(function (b) { return b.textContent === l; }).click(); }
+  function bout() { return bc.querySelector('.codewrap pre').textContent; }
+  bpreset('Example: ubiquitin (no MSA)'); await tick();
+  ok('boltz ubq yaml', /version: 1/.test(bout()) && /msa: empty/.test(bout()) && /sequence: MQIFVKT/.test(bout()), bout());
+  bpreset('Example: FFA4 + TUG-891 + affinity'); await tick();
+  ok('boltz affinity yaml', /properties:\n  - affinity:\n      binder: B/.test(bout()) && /smiles: 'Cc1ccc/.test(bout()) && /msa: \/home\/YOU/.test(bout()), bout().slice(-300));
+  ok('boltz no errs', !bc.querySelector('.msgs .err'), bc.querySelector('.msgs').textContent);
+  bpreset('Example: cyclic peptide'); await tick();
+  ok('boltz cyclic', /cyclic: true/.test(bout()));
+  window.__yamlSamples = {};
+  ['Example: ubiquitin (no MSA)', 'Example: FFA4 + TUG-891 + affinity', 'Example: cyclic peptide'].forEach(function (l) { bpreset(l); window.__yamlSamples[l] = bout(); });
+  R.yaml = window.__yamlSamples;
+  location.hash = '#/boltz/cmd-builder'; await tick();
+  var bcb = Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('Boltz command builder') >= 0; });
+  var bt = bcb.querySelector('pre').textContent;
+  ok('boltz cmd base', /CUDA_VISIBLE_DEVICES=2/.test(bt) && /boltz predict/.test(bt) && !/--use_msa_server/.test(bt), bt);
+  Array.from(bcb.querySelectorAll('.chips button')).find(function (b) { return /remote MSA/.test(b.textContent); }).click(); await tick();
+  ok('boltz server warn', /--use_msa_server/.test(bcb.querySelector('pre').textContent) && /Data leaves Woody/.test(bcb.textContent));
+  location.hash = '#/boltz/read'; await tick();
+  ok('boltz score', /0\.92/.test(Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('How confidence_score') >= 0; }).textContent));
+  location.hash = '#/boltz/param-explorer'; await tick();
+  ok('boltz params', document.querySelectorAll('details.param').length >= 4);
+  // OS switch
+  location.hash = '#/alphafold3/get-on-woody'; await tick();
+  var mainEl = document.getElementById('main');
+  Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Windows'; }).click(); await tick();
+  ok('os win', /WinSCP/.test(mainEl.querySelector('.osblock').textContent) && !/Cyberduck/.test(mainEl.querySelector('.osblock').textContent) && !/scp/.test(mainEl.querySelector('.osblock').textContent), mainEl.querySelector('.osblock').textContent);
+  Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Mac'; }).click(); await tick();
+  ok('os mac', /Cyberduck/.test(mainEl.querySelector('.osblock').textContent) && !/WinSCP/.test(mainEl.querySelector('.osblock').textContent));
+  Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Linux'; }).click(); await tick();
+  ok('os linux', /sftp:\/\//.test(mainEl.querySelector('.osblock').textContent));
+  location.hash = '#/alphafold3/get-files'; await tick();
+  ok('os in get-files', !!mainEl.querySelector('.osblock') && /rsync/.test(mainEl.textContent));
+  var allText = ''; for (var q = 0; q < ids.length; q++) { location.hash = ids[q]; await tick(); allText += document.getElementById('main').textContent; }
+  ok('no raw [[', allText.indexOf('[[') < 0);
+  var x = new XMLHttpRequest(); x.open('POST', '/report'); x.send(JSON.stringify(R));
+})().catch(function (e) { R.errors.push('harness: ' + e.stack); var x = new XMLHttpRequest(); x.open('POST', '/report'); x.send(JSON.stringify(R)); });
+</script>
