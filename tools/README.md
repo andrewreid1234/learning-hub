@@ -38,3 +38,5 @@ A healthy run prints `errors []`, a lesson count (53 at the time of writing) and
 - Firefox caches scripts. If a check fails right after an edit, use a fresh `--profile` directory, as above.
 - Do not stop the server with `pkill -f serve_test.py` from a shell whose own command line contains that text: it kills the shell too. Use Ctrl+C or kill the process by its id.
 - The widgets that call into a program on Woody (for example the Boltz parser) were checked separately on Woody and are not part of this browser test.
+
+Back to the [main README](../README.md).
