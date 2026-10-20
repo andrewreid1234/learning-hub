@@ -84,7 +84,7 @@
           {
             id: 'before', title: 'Before you start', blocks: [
               p('Boltz runs on Woody, so you need exactly the same basics as for AlphaFold3: an SSH login, a file-transfer tool, a terminal, <code>tmux</code>, and a habit of checking <code>nvidia-smi</code> before you start. If you have done the AlphaFold3 course, skip this module.'),
-              p('If not, do <a href="#/alphafold3/get-on-woody">Getting onto Woody</a> and <a href="#/alphafold3/terminal-basics">Terminal survival kit</a> from the AlphaFold3 course first. They are the same for every tool and show the instructions for your operating system.'),
+              p('If not, do the <a href="#/woody/what-is-woody"><strong>Using Woody</strong></a> course first. It is the same for every tool and shows the instructions for your operating system.'),
               check('You are ready when', ['I can log in to Woody', 'I can create files and folders in my home folder', 'I can start tmux and re-attach', 'I can read nvidia-smi and name an idle GPU'])
             ]
           },

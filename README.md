@@ -2,7 +2,7 @@
 
 Interactive, no-build learning resources for the software we use in the group. Plain HTML/CSS/JS: open `index.html` in a browser (or serve the folder), or use the single-file build in `dist/learning-hub.html`.
 
-Courses: **AlphaFold3 on Woody** and **Boltz-2 on Woody**. Each has a Windows / Mac / Linux switch for the parts that run on your own computer.
+Courses: **Using Woody** (start here), **AlphaFold3 on Woody** and **Boltz-2 on Woody**. Each has a Windows / Mac / Linux switch for the parts that run on your own computer. The landing page has course cards, progress, a "continue" button and lesson search.
 
 ## Layout
 - `index.html`: shell and styles. `hub.js`: the course engine (`Hub.register`, `Hub.widget`).

@@ -1,6 +1,7 @@
 <!doctype html><meta charset="utf-8"><title>selftest</title>
 <body><div class="app"><nav class="side" id="side"></nav><main id="main"></main></div><button id="menuBtn"></button>
 <script src="../hub.js"></script>
+<script src="../courses/woody.js"></script>
 <script src="../courses/real-examples.js"></script>
 <script src="../courses/alphafold3-widgets.js"></script>
 <script src="../courses/alphafold3.js"></script>
@@ -14,14 +15,22 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
 (async function () {
   Hub.start();
   var ids = [];
-  document.querySelectorAll('#side a.nav').forEach(function (a) { var h = a.getAttribute('href'); if (h.split('/').length === 3) ids.push(h); });
+  ok('landing hero', !!document.querySelector('.landing h1') && document.querySelectorAll('.coursecard').length === 3, document.querySelectorAll('.coursecard').length);
+  var inp = document.querySelector('.searchbox input'); inp.value = 'tmux'; inp.oninput(); await tick();
+  ok('search finds tmux', document.querySelectorAll('.result').length >= 2, document.querySelectorAll('.result').length);
+  inp.value = 'zzzqqq'; inp.oninput(); ok('search no match', document.querySelectorAll('.result').length === 0);
+  ['woody', 'alphafold3', 'boltz'].forEach(function (cid) { /* collected below */ });
+  for (var ci = 0, cs = ['woody', 'alphafold3', 'boltz']; ci < cs.length; ci++) {
+    location.hash = '#/' + cs[ci] + '/x'; await tick();
+    document.querySelectorAll('#side a.nav').forEach(function (a) { var h = a.getAttribute('href'); if (h.split('/').length === 3 && h.indexOf('#/' + cs[ci] + '/') === 0 && ids.indexOf(h) < 0) ids.push(h); });
+  }
   for (var i = 0; i < ids.length; i++) {
     location.hash = ids[i]; await tick();
     var m = document.getElementById('main'); R.lessons++;
     if (/Widget error|Missing widget/.test(m.textContent)) R.errors.push('widget problem in ' + ids[i] + ': ' + m.textContent.match(/(Widget error|Missing widget)[^\n]{0,80}/)[0]);
     if (!m.querySelector('h1')) R.errors.push('no h1 ' + ids[i]);
   }
-  ok('lessons rendered', R.lessons >= 15, R.lessons);
+  ok('lessons rendered', R.lessons >= 35, R.lessons);
 
   // JSON builder presets
   location.hash = '#/alphafold3/ubiquitin'; await tick();
@@ -119,7 +128,7 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
   location.hash = '#/boltz/param-explorer'; await tick();
   ok('boltz params', document.querySelectorAll('details.param').length >= 4);
   // OS switch
-  location.hash = '#/alphafold3/get-on-woody'; await tick();
+  location.hash = '#/woody/connecting'; await tick();
   var mainEl = document.getElementById('main');
   Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Windows'; }).click(); await tick();
   ok('os win', /WinSCP/.test(mainEl.querySelector('.osblock').textContent) && !/Cyberduck/.test(mainEl.querySelector('.osblock').textContent) && !/scp/.test(mainEl.querySelector('.osblock').textContent), mainEl.querySelector('.osblock').textContent);
@@ -127,8 +136,10 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
   ok('os mac', /Cyberduck/.test(mainEl.querySelector('.osblock').textContent) && !/WinSCP/.test(mainEl.querySelector('.osblock').textContent));
   Array.from(document.querySelectorAll('.osbox .seg button')).find(function (b) { return b.textContent === 'Linux'; }).click(); await tick();
   ok('os linux', /sftp:\/\//.test(mainEl.querySelector('.osblock').textContent));
-  location.hash = '#/alphafold3/get-files'; await tick();
-  ok('os in get-files', !!mainEl.querySelector('.osblock') && /rsync/.test(mainEl.textContent));
+  location.hash = '#/woody/transfer'; await tick();
+  ok('os in transfer', !!mainEl.querySelector('.osblock') && /rsync/.test(mainEl.textContent));
+  location.hash = '#/woody/long-jobs'; await tick();
+  ok('woody links resolve', Array.from(document.querySelectorAll('#main a[href^="#/"]')).every(function (a) { var P = a.getAttribute('href').split('/'); return !!document.querySelector('#side a[href="#/' + P[1] + '/' + P[2] + '"]') || P[1] !== 'woody'; }));
   var allText = ''; for (var q = 0; q < ids.length; q++) { location.hash = ids[q]; await tick(); allText += document.getElementById('main').textContent; }
   ok('no raw [[', allText.indexOf('[[') < 0);
   var x = new XMLHttpRequest(); x.open('POST', '/report'); x.send(JSON.stringify(R));

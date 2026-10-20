@@ -38,56 +38,19 @@
       {
         id: 'foundations', title: 'Module 0: Foundations', skippable: true, lessons: [
           {
-            id: 'get-on-woody', title: 'Getting onto Woody', blocks: [
-              p('<strong>Woody</strong> is the group\'s shared Linux server. It has the GPUs, the AlphaFold3 install and all the genetic databases (~630 GB), so you never install anything yourself. You work on it remotely from your own laptop or desktop.'),
-              co('summary', 'Before you start', '<p>You need three things from Andrew (or whoever administers Woody): an account (username + password or key), Woody\'s network address, and membership of the <code>docker</code> group. Without the last one, AlphaFold3 will refuse to start.</p>'),
-              h('Two tools, two jobs'),
-              p('You need a <strong>terminal</strong> for typing commands (create files, start runs, check the GPUs) and a <strong>file-transfer tool</strong> for moving files between your computer and Woody (uploading input JSONs, downloading results). Pick your operating system in the sidebar: the instructions below follow it.'),
-              os({
-                win: [
-                  table(['Job', 'Tool'], [['Terminal', '<strong>PowerShell</strong> or <strong>Windows Terminal</strong>. Windows 10/11 already include <code>ssh</code>. Open the Start menu, type <code>powershell</code>, press Enter.'], ['File transfer', '<strong>WinSCP</strong> (free download), a drag-and-drop window.']]),
-                  code('ssh [[your-username]]@woody.chem.gla.ac.uk', 'in PowerShell, on your own computer'),
-                  ol_steps(['In WinSCP choose <strong>New Session</strong>. File protocol: SFTP. Host name: woody.chem.gla.ac.uk. Port 22. Your username.', 'Click <strong>Save</strong> and give the session a name (e.g. <code>woody</code>).', 'Log in. The left pane is your PC, the right is Woody. Drag files between them.'])
-                ],
-                mac: [
-                  table(['Job', 'Tool'], [['Terminal', '<strong>Terminal</strong> (press Cmd+Space, type <code>Terminal</code>, Enter). <code>ssh</code>, <code>scp</code> and <code>rsync</code> are built in.'], ['File transfer', '<strong>Cyberduck</strong> (free, drag and drop; choose the SFTP protocol), or <code>scp</code> / <code>rsync</code> in Terminal.']]),
-                  code('ssh [[your-username]]@woody.chem.gla.ac.uk', 'in Terminal, on your own computer'),
-                  ol_steps(['In Cyberduck choose <strong>Open Connection</strong>. Protocol: SFTP. Server: woody.chem.gla.ac.uk. Port 22. Your username.', 'Bookmark it so you can reconnect in one click.', 'Drag files between the Cyberduck window and Finder.'])
-                ],
-                linux: [
-                  table(['Job', 'Tool'], [['Terminal', 'Any terminal (often Ctrl+Alt+T). <code>ssh</code>, <code>scp</code> and <code>rsync</code> are normally installed.'], ['File transfer', 'Your file manager: choose <em>Connect to Server</em> and enter <code>sftp://your-username@woody.chem.gla.ac.uk</code>. Or use <code>scp</code> / <code>rsync</code> in the terminal.']]),
-                  code('ssh [[your-username]]@woody.chem.gla.ac.uk', 'in a terminal, on your own computer')
-                ]
-              }),
-              p('Replace the two highlighted parts. The first time you connect, it asks you to trust the server: type <code>yes</code>. When it works you will see a prompt such as <code>[you@woody ~]$</code>. That <code>$</code> means Woody is waiting for a command. Every command block in this course is typed on Woody unless its label says <em>on your own computer</em>.'),
-              co('todo', 'TODO for the lab', '<p>Woody\'s address is <code>woody.chem.gla.ac.uk</code>. Still to confirm: whether off-campus access needs the university VPN. Until a maintainer fills that in, ask your supervisor or the lab admin before you try from home.</p>'),
-              check('Checkpoint', ['I can log in with SSH and see a prompt ending in $', 'I can see my Woody home folder in my file-transfer tool', 'I know my username and who to ask about the docker group']),
-              quiz('You see the prompt <code>[you@woody ~]$</code>. Where are you?', ['On my own laptop', 'On Woody, in my home folder', 'Inside the AlphaFold3 container'], 1, 'The <code>~</code> means your home folder, and <code>woody</code> is the machine you are logged in to.')
-            ]
-          },
-          {
-            id: 'terminal-basics', title: 'Terminal survival kit', blocks: [
-              p('You only need about a dozen commands. Type each one in the Woody terminal and press Enter. Nothing here can break AlphaFold3 itself, but <code>rm</code> deletes permanently, so read before you press Enter.'),
-              table(['Command', 'What it does'], [
-                ['<code>pwd</code>', 'Print where you are'],
-                ['<code>ls</code> / <code>ls -l</code>', 'List files here (<code>-l</code> shows sizes and owners)'],
-                ['<code>cd folder</code>', 'Go into a folder. <code>cd ..</code> goes up. <code>cd</code> alone goes home'],
-                ['<code>mkdir -p a/b</code>', 'Make a folder (and parents)'],
-                ['<code>nano file.json</code>', 'Edit a file in the terminal. Save: Ctrl+O then Enter. Exit: Ctrl+X'],
-                ['<code>cat file</code> / <code>less file</code>', 'Show a file. In <code>less</code>, press <code>q</code> to quit'],
-                ['<code>cp a b</code> / <code>mv a b</code>', 'Copy / move or rename'],
-                ['<code>rm file</code>', 'Delete (no recycle bin)'],
-                ['<code>Tab</code> key', 'Auto-completes names. Use it constantly'],
-                ['&uarr; arrow', 'Recall previous commands'],
-                ['<code>Ctrl+C</code>', 'Stop the thing that is running']
-              ]),
-              h('Try it'),
-              code('pwd\nmkdir -p ~/af3/input ~/af3/output ~/af3/logs\nls ~/af3', 'on Woody'),
-              p('That creates the three folders AlphaFold3 uses: <code>input</code> (your JSON files), <code>output</code> (results) and <code>logs</code>. If they already exist nothing happens, which is fine.'),
-              h('tmux: keep a job alive when you disconnect'),
-              co('mistake', 'Common mistake', '<p>If you start a long run in a plain SSH window and your Wi-Fi blinks or your laptop sleeps, the run dies. Run long jobs inside <code>tmux</code>.</p>'),
-              code('tmux new -s af3        # start a named session; run your job inside it\n# detach (job keeps running): press Ctrl+B, release, then press D\ntmux ls                # list sessions\ntmux attach -t af3     # come back to it later', 'on Woody'),
-              check('Checkpoint', ['I created ~/af3/input and ~/af3/output', 'I can open a file with nano and save it', 'I started and detached from a tmux session, then re-attached'])
+            id: 'get-on-woody', title: 'Before you start: Woody basics', blocks: [
+              p('AlphaFold3 runs on <strong>Woody</strong>, the group\'s shared Linux server, which has the GPUs, the AlphaFold3 install and the genetic databases (~630 GB). You never install anything yourself. You work on it remotely from your own computer.'),
+              co('summary', 'Start with the Using Woody course if you are new', '<p>Logging in, the terminal, files, moving files and tmux are covered properly, for Windows, Mac and Linux, in the <a href="#/woody/what-is-woody"><strong>Using Woody</strong></a> course. This lesson only lists what you need for AlphaFold3 specifically.</p>'),
+              h('What you need'),
+              ul(['A Woody account and the address <code>woody.chem.gla.ac.uk</code> (<a href="#/woody/connecting">Connecting for the first time</a>).', 'Membership of the <code>docker</code> group. Without it AlphaFold3 refuses to start. Ask the administrator.', 'A file-transfer tool to upload input files and download results (<a href="#/woody/transfer">Moving files to and from Woody</a>).', 'A comfortable minimum of terminal skills: <code>cd</code>, <code>ls</code>, <code>mkdir</code>, <code>nano</code> (<a href="#/woody/navigate">Moving around and handling files</a>).']),
+              h('Create the AlphaFold3 folders'),
+              code('mkdir -p ~/af3/input ~/af3/output ~/af3/logs\nls ~/af3', 'on Woody'),
+              p('That makes the three folders AlphaFold3 uses: <code>input</code> (your JSON files), <code>output</code> (results) and <code>logs</code>. If they already exist nothing happens, which is fine.'),
+              h('Run long jobs in tmux'),
+              p('A long run in a plain SSH window dies if your Wi-Fi blinks or your laptop sleeps. Start it inside <code>tmux</code>. Detach with <kbd>Ctrl</kbd>+<kbd>B</kbd>, let go, then <kbd>D</kbd>. Full details are in <a href="#/woody/long-jobs">Long jobs: tmux, screen and nohup</a>.'),
+              code('tmux new -s af3        # start a named session; run your job inside it\ntmux ls                # list sessions\ntmux attach -t af3     # come back to it later', 'on Woody'),
+              check('Checkpoint', ['I can log in to Woody', 'I created ~/af3/input and ~/af3/output', 'I started and detached from a tmux session, then re-attached', 'I know who to ask about the docker group']),
+              quiz('Where do the commands in this course run?', ['On my own computer', 'On Woody, unless the label says otherwise', 'Inside the AlphaFold3 container only'], 1, 'Each code block is labelled with where to type it. Unlabelled ones are on Woody.')
             ]
           },
           {

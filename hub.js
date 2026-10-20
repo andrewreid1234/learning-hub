@@ -127,8 +127,16 @@
     side.appendChild(el('p', { class: 'brand' }, 'Learning Hub<small>Jamieson Group</small>'));
     var home = el('a', { class: 'nav' + (!route.cid ? ' active' : ''), href: '#/' }, '<span>All courses</span>');
     side.appendChild(home);
+    if (!route.cid) {
+      side.appendChild(el('h3', null, 'Courses'));
+      courses.forEach(function (c) {
+        var all = flatLessons(c), n = all.filter(function (x) { return isDone(c.id, x.l.id); }).length;
+        side.appendChild(el('a', { class: 'nav', href: '#/' + c.id + '/' + all[0].l.id },
+          '<span>' + esc(c.title) + '<small class="cnt">' + n + ' / ' + all.length + ' lessons</small></span>'));
+      });
+    }
     courses.forEach(function (c) {
-      if (route.cid && route.cid !== c.id) return;
+      if (!route.cid || route.cid !== c.id) return;
       side.appendChild(el('h3', null, esc(c.title)));
       c.modules.forEach(function (m) {
         side.appendChild(el('div', { style: 'font-size:.8rem;color:var(--muted);margin:10px 8px 2px' }, esc(m.title) + (m.skippable ? '<span class="modtag">skippable</span>' : '')));
@@ -161,23 +169,131 @@
     side.appendChild(tools);
   }
 
+  function plain(html) { return String(html || '').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\[\[|\]\]/g, ''); }
+  function blockText(b) {
+    var t = [b.text, b.html, b.label, b.q, b.title, b.why].concat(b.items || [], b.opts || [], b.head || []);
+    (b.rows || []).forEach(function (r) { t = t.concat(r); });
+    ['win', 'mac', 'linux'].forEach(function (k) { (b[k] || []).forEach(function (x) { t.push(blockText(x)); }); });
+    return t.filter(function (x) { return typeof x === 'string'; }).join(' ');
+  }
+  var searchIdx = null;
+  function buildIndex() {
+    searchIdx = [];
+    courses.forEach(function (c) {
+      c.modules.forEach(function (m) {
+        m.lessons.forEach(function (l) {
+          var body = plain(l.blocks.map(blockText).join(' ')).replace(/\s+/g, ' ');
+          searchIdx.push({ c: c, m: m, l: l, title: l.title.toLowerCase(), body: body, low: body.toLowerCase() });
+        });
+      });
+    });
+  }
+  function search(q) {
+    if (!searchIdx) buildIndex();
+    var words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    var out = [];
+    searchIdx.forEach(function (e) {
+      var score = 0, ok = true;
+      words.forEach(function (w) {
+        var inT = e.title.indexOf(w) >= 0, inB = e.low.indexOf(w) >= 0;
+        if (!inT && !inB) ok = false; else score += (inT ? 5 : 0) + (inB ? 1 : 0);
+      });
+      if (ok) {
+        var pos = e.low.indexOf(words[0]), snip = '';
+        if (pos >= 0) snip = (pos > 40 ? '&hellip;' : '') + esc(e.body.substr(Math.max(0, pos - 40), 150)) + '&hellip;';
+        out.push({ e: e, score: score, snip: snip });
+      }
+    });
+    out.sort(function (a, b) { return b.score - a.score; });
+    return out.slice(0, 12);
+  }
+
   function renderHome() {
     main.innerHTML = '';
-    main.appendChild(el('div', { class: 'hero' }, '<h1>Learning Hub</h1><p>Interactive, hands-on guides for the software we use in the group. Everything here is done by you, by hand, on your own terminal: nothing needs an AI assistant to run.</p>'));
+    var total = 0, done = 0, last = store._last;
     courses.forEach(function (c) {
-      var all = flatLessons(c), n = all.filter(function (x) { return isDone(c.id, x.l.id); }).length;
-      var first = all[0];
-      main.appendChild(el('a', { class: 'coursecard', href: '#/' + c.id + '/' + first.l.id },
-        '<strong style="font-size:1.15rem">' + esc(c.title) + '</strong><div style="color:var(--muted)">' + c.blurb + '</div>' +
-        '<div style="font-size:.8rem;color:var(--muted);margin-top:8px">' + all.length + ' lessons &middot; ' + n + ' complete</div>' +
-        '<div class="bar"><i style="width:' + Math.round(100 * n / all.length) + '%"></i></div>'));
+      flatLessons(c).forEach(function (x) { total++; if (isDone(c.id, x.l.id)) done++; });
     });
+    var lastLesson = null;
+    if (last) { var lc = courses.find(function (c) { return c.id === last.cid; }); if (lc) { var lf = flatLessons(lc).find(function (x) { return x.l.id === last.lid; }); if (lf) lastLesson = { c: lc, l: lf.l }; } }
+    var firstC = courses[0], firstL = firstC && flatLessons(firstC)[0].l;
+
+    var hero = el('section', { class: 'landing' });
+    hero.appendChild(el('div', { class: 'eyebrow' }, 'Jamieson Group &middot; School of Chemistry, University of Glasgow'));
+    hero.appendChild(el('h1', null, 'Learn the tools.<br>Run them yourself.'));
+    hero.appendChild(el('p', { class: 'lede' }, 'Step-by-step, hands-on courses for the software we use on Woody, our shared GPU server. Written for complete beginners, with shortcuts for experienced users. Everything is done by you, by hand, so nothing needs an assistant to run.'));
+    var cta = el('div', { class: 'cta' });
+    function browse() {
+      var b = el('button', { type: 'button', class: 'btn big ghost' }, 'Browse courses');
+      b.onclick = function () { document.getElementById('courses').scrollIntoView({ behavior: 'smooth' }); };
+      return b;
+    }
+    if (lastLesson) {
+      cta.appendChild(el('a', { class: 'btn big', href: '#/' + lastLesson.c.id + '/' + lastLesson.l.id }, 'Continue: ' + esc(lastLesson.l.title)));
+      cta.appendChild(browse());
+    } else {
+      cta.appendChild(el('a', { class: 'btn big', href: '#/' + firstC.id + '/' + firstL.id }, 'Start with ' + esc(firstC.title)));
+      cta.appendChild(browse());
+    }
+    hero.appendChild(cta);
+    var stats = el('div', { class: 'stats' });
+    stats.appendChild(el('div', null, '<b>' + courses.length + '</b><span>courses</span>'));
+    stats.appendChild(el('div', null, '<b>' + total + '</b><span>lessons</span>'));
+    stats.appendChild(el('div', null, '<b>' + done + '</b><span>completed by you</span>'));
+    hero.appendChild(stats);
+    main.appendChild(hero);
+
+    var feats = el('div', { class: 'feats' });
+    [['Hands-on', 'Every lesson ends in something you do on the real machine, with a checkpoint so you know it worked.'],
+     ['Interactive tools', 'Build input files, explore every parameter, and practise reading real results with built-in widgets.'],
+     ['Made for your computer', 'Windows, Mac or Linux: pick yours once in the sidebar and the instructions follow it.']].forEach(function (f) {
+      feats.appendChild(el('div', { class: 'feat' }, '<h3>' + f[0] + '</h3><p>' + f[1] + '</p>'));
+    });
+    main.appendChild(feats);
+
+    var sr = el('div', { class: 'searchbox' });
+    var inp = el('input', { type: 'search', placeholder: 'Search lessons: tmux, MSA, rsync', 'aria-label': 'Search lessons' });
+    var res = el('div', { class: 'results', 'aria-live': 'polite' });
+    inp.oninput = function () {
+      var r = search(inp.value); res.innerHTML = '';
+      if (inp.value.trim() && !r.length) res.appendChild(el('p', { class: 'muted' }, 'No lessons match. Try a shorter or different word.'));
+      r.forEach(function (x) {
+        res.appendChild(el('a', { class: 'result', href: '#/' + x.e.c.id + '/' + x.e.l.id },
+          '<strong>' + esc(x.e.l.title) + '</strong><span class="where">' + esc(x.e.c.title) + ' &rsaquo; ' + esc(x.e.m.title) + '</span><span class="snip">' + x.snip + '</span>'));
+      });
+    };
+    sr.appendChild(inp); sr.appendChild(res); main.appendChild(sr);
+
+    main.appendChild(el('h2', { id: 'courses', class: 'sect' }, 'Courses'));
+    main.appendChild(el('p', { class: 'muted' }, 'If you are new to Woody, begin with <strong>Using Woody</strong>. Then take whichever software course you need.'));
+    var grid = el('div', { class: 'grid' });
+    courses.forEach(function (c, ci) {
+      var all = flatLessons(c), n = all.filter(function (x) { return isDone(c.id, x.l.id); }).length;
+      var next = all.find(function (x) { return !isDone(c.id, x.l.id); });
+      var label = n === 0 ? 'Start course' : (n === all.length ? 'Review course' : 'Continue');
+      var target = n === all.length || !next ? all[0] : next;
+      var card = el('a', { class: 'coursecard', href: '#/' + c.id + '/' + target.l.id });
+      card.innerHTML =
+        '<div class="ctop"><span class="num">' + (ci + 1) + '</span>' + (c.tag ? '<span class="tagpill">' + esc(c.tag) + '</span>' : '') + '</div>' +
+        '<strong class="ctitle">' + esc(c.title) + '</strong>' +
+        '<div class="cblurb">' + c.blurb + '</div>' +
+        '<div class="cmeta">' + c.modules.length + ' modules &middot; ' + all.length + ' lessons' + (c.minutes ? ' &middot; about ' + (c.minutes >= 60 ? Math.round(c.minutes / 6) / 10 + ' hours' : c.minutes + ' min') : '') + '</div>' +
+        '<div class="bar"><i style="width:' + Math.round(100 * n / all.length) + '%"></i></div>' +
+        '<div class="cfoot"><span>' + n + ' of ' + all.length + ' complete</span><span class="go">' + label + ' &rarr;</span></div>';
+      grid.appendChild(card);
+    });
+    main.appendChild(grid);
+
+    main.appendChild(el('p', { class: 'footnote' }, 'Progress is saved in this browser only. Nothing is sent anywhere. The courses are written to be followed by hand; commands were checked against the real Woody install.'));
+    window.scrollTo(0, 0);
   }
 
   function renderLesson(c, lid, keepScroll) {
     var all = flatLessons(c), idx = all.findIndex(function (x) { return x.l.id === lid; });
     if (idx < 0) { location.hash = '#/' + c.id + '/' + all[0].l.id; return; }
     var cur = all[idx];
+    store._last = { cid: c.id, lid: lid }; save();
     main.innerHTML = '';
     main.appendChild(el('div', { class: 'crumb' }, esc(c.title) + ' &rsaquo; ' + esc(cur.m.title)));
     main.appendChild(el('h1', null, esc(cur.l.title)));
