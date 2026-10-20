@@ -1241,6 +1241,32 @@ window.AF3_REAL = {"ffa4_monomer":{"name":"ffa4_monomer","n":297,"tokenChains":[
             ]
           },
           {
+            id: 'viewing', title: 'Viewing and judging a structure', blocks: [
+              p('Numbers tell you how confident AF3 is. Your eyes tell you whether the structure makes sense. Do both, in that order: read the scores first (next lesson), then open the model and check that the picture agrees.'),
+              h('What is inside the .cif'),
+              ul(['Every atom has a <strong>B-factor</strong> column. In an AF3 model this column holds <strong>pLDDT on a 0 to 100 scale</strong> (e.g. 88.32 for a ligand atom in the FFA4 run), not a crystallographic B-factor.', 'Protein chains are <code>A</code>, <code>B</code>&hellip; as you named them in the JSON. A ligand appears as residue <code>LIG_B</code> (for a ligand with id B), as HETATM lines.', 'The top-level <code>&lt;job&gt;_model.cif</code> is the best-ranked sample. The <code>seed-N_sample-M</code> folders hold every other sample with its own scores.']),
+              co('note', 'Which viewer?', '<p>Use whichever you already know. <strong>ChimeraX</strong> is the best free choice for colouring by confidence and measuring contacts. <strong>PyMOL</strong> is fine if your group already uses it. <strong>Mol*</strong> (molstar.org/viewer) needs no install: drag the file onto the page. The commands below were checked against the real FFA4 output files (chain names, ligand name, B-factor range), but the viewers themselves are installed on your own computer, so try each command once and tell the course maintainer if one differs in your version.</p>'),
+              h('ChimeraX'),
+              code('open ~/Downloads/ffa4_tug891/ffa4_tug891_model.cif\ncolor bfactor palette alphafold\nview', 'ChimeraX command line (the box at the bottom of the window)'),
+              p('<code>palette alphafold</code> is the standard AlphaFold scheme: <strong>dark blue above 90</strong> (very high), <strong>light blue 70&ndash;90</strong> (confident), <strong>yellow 50&ndash;70</strong> (low), <strong>orange below 50</strong> (very low, often disordered). Floppy orange loops and tails are normal; an orange core is not.'),
+              code('show :LIG_B atoms\nstyle :LIG_B stick\ncolor :LIG_B byhetero\nshow (:LIG_B :<4.5) & protein atoms\ncontacts :LIG_B restrict protein', 'ChimeraX: show a ligand and the protein residues within 4.5 &Aring;'),
+              p('<code>contacts</code> draws a line for each atom-atom contact; <code>hbonds :LIG_B</code> adds hydrogen bonds. Treat both as a prompt to look, not as proof. AF3 draws a plausible pose whether or not the molecule really binds.'),
+              code('open ~/Downloads/other_run/other_run_model.cif\nmatchmaker #2 to #1\n# colour the two models differently to see where they disagree\ncolor #1 steelblue target c\ncolor #2 salmon target c', 'ChimeraX: compare two predictions (e.g. two seeds, or a mutant against wild type)'),
+              code('save ~/Desktop/ffa4_tug891.png width 1600 supersample 3', 'ChimeraX: picture for a slide'),
+              h('PyMOL'),
+              code('load ffa4_tug891_model.cif, m\nspectrum b, red_yellow_green_cyan_blue, m, minimum=50, maximum=90\nshow sticks, resn LIG_B\nshow sticks, byres (resn LIG_B around 4.5) and polymer\nzoom resn LIG_B', 'PyMOL command line'),
+              p('PyMOL has no built-in AlphaFold palette, so this uses a blue-is-good scale where red is below 50 and blue is above 90. The colours differ from ChimeraX but mean the same thing. For two models, <code>align m2, m1</code> superposes them.'),
+              h('Mol* in the browser'),
+              p('Go to molstar.org/viewer, then open the <code>.cif</code> from your computer. Use the colour-theme menu to choose a <em>pLDDT / confidence</em> theme if it is offered for your file. Nothing is uploaded: the file is read locally in your browser.'),
+              h('A five-point sanity check'),
+              ol_steps(['<strong>Colour by confidence.</strong> Is the part you care about blue, or orange?', '<strong>Look at the interface.</strong> For a complex, do the two chains actually touch, or just float near each other?', '<strong>Look at the ligand.</strong> Is it buried in a pocket, lying along the surface, or sitting out in solvent?', '<strong>Look for impossible things.</strong> Chains passing through each other, knotted backbones, or a ligand overlapping protein atoms. <code>has_clash</code> in the summary file flags the worst of these.', '<strong>Compare samples.</strong> Open two or three samples. If they put the ligand in different places, the pose is not stable, whatever the top score says.']),
+              co('mistake', 'A pretty picture is not evidence', '<p>AF3 always returns a clean, well-packed structure, even for a protein it knows nothing about or a ligand that does not bind. Never judge a result from the picture alone. A confident-looking pose with a low ipTM, or one that changes between seeds, is a guess.</p>'),
+              check('Checkpoint', ['I opened a .cif and coloured it by confidence', 'I can name which parts are very high and which are low confidence', 'I found the ligand (LIG_B) and looked at what surrounds it', 'I compared two samples and saw whether they agree', 'I saved a picture']),
+              quiz('Your ligand pose looks perfect in the viewer, but the ligand sits in a different place in each of three seeds. What do you conclude?', ['The pose is reliable because each one looks good', 'The pose is not stable, so do not trust any single one', 'Viewer settings are wrong'], 1, 'Agreement between seeds is the evidence. Individual poses always look tidy.'),
+              quiz('In an AF3 .cif, the B-factor column is:', ['A crystallographic temperature factor', 'pLDDT on a 0 to 100 scale', 'The ipTM for the chain'], 1, 'AF3 stores per-atom pLDDT there, which is why <code>color bfactor</code> shows confidence.')
+            ]
+          },
+          {
             id: 'confidence', title: 'Reading the confidence scores', blocks: [
               p('First the headline numbers, then the two plots that tell you <em>where</em> to trust the structure. The examples below are the <strong>real outputs</strong> of the two FFA4 runs.'),
               table(['Score', 'Range', 'Rule of thumb'], [
@@ -1292,6 +1318,34 @@ window.AF3_REAL = {"ffa4_monomer":{"name":"ffa4_monomer","n":297,"tokenChains":[
               code('docker run --rm alphafold3 python run_alphafold.py --help | less', 'on Woody (q to quit)'),
               h('Terms of use'),
               p('Every output folder contains <code>TERMS_OF_USE.md</code>. AF3\'s model parameters have their own terms; read it before publishing anything. Check with the group before sharing outputs externally.')
+            ]
+          },
+          {
+            id: 'real-failures', title: 'Troubleshooting: real situations', blocks: [
+              p('The table in the previous lesson lists error messages. This lesson covers the situations that actually trip people up on a first run, with a way to check each one.'),
+              h('"I cannot leave tmux without stopping my job"'),
+              p('You do not stop the job: you <strong>detach</strong>. Press <kbd>Ctrl</kbd>+<kbd>B</kbd>, let go of <em>both</em> keys, then press <kbd>D</kbd>. Typing them as one chord is the usual reason it fails. Do not press Ctrl+C or type <code>exit</code>: both end the job.'),
+              code('tmux ls                 # is my session still there?\ntmux attach -t af3      # go back in', 'on Woody'),
+              p('If <code>tmux ls</code> says <em>no server running</em>, the job was not inside tmux (or the machine restarted). Nothing can be recovered: start again inside tmux.'),
+              h('"How long is left?"'),
+              p('There is no progress bar. Work out the stage instead:'),
+              code('docker ps              # is my container running, and for how long?\nnvidia-smi             # GPU use near 0% = still searching; high = predicting\nls -lt ~/af3/output/   # newest folder first', 'on Woody'),
+              ul(['<strong>Data pipeline (CPU):</strong> the long part. About 7 minutes for FFA4 (297 residues). The GPU is idle.', '<strong>Inference (GPU):</strong> short, about 1 minute for FFA4. Utilisation jumps.', 'Finished when <code>*_model.cif</code> and <code>*_summary_confidences.json</code> exist in the output folder and the tmux prompt returns.']),
+              co('mistake', 'A GPU showing lots of memory is not necessarily busy', '<p>AF3 reserves almost all of a GPU\'s memory as soon as it starts, even while it is still doing the CPU search at 0% utilisation. So 23 GB used with 0% utilisation usually means <em>someone\'s job is about to use that GPU</em>, not that it is free. Check <code>docker ps</code> and <code>nvidia-smi</code>\'s process list, and ask in the group channel if unsure. Pick a GPU showing only a few hundred MiB used.</p>'),
+              h('"I want to stop a job"'),
+              code('docker ps                          # find the container name in the last column\ndocker stop [[container-name]]      # stops it', 'on Woody'),
+              p('Only stop a container you started. Several people share the machine and <code>docker ps</code> lists everyone\'s. If you are unsure whose it is, leave it and ask.'),
+              h('"There is no output folder"'),
+              ul(['Look in <code>~/af3/output</code>, not <code>~/af3/input</code>.', 'The folder is named after the <code>name</code> field in your JSON, lower-cased, not after the file name.', 'A same-named earlier run makes AF3 add a time-stamp suffix to the new one instead of overwriting.', 'Nothing appears until the run has started writing. During the CPU search the folder may be empty or missing.']),
+              h('"I cannot delete or edit the output folder"'),
+              p('Runs launched through Docker usually write files as <code>root</code>, so you cannot remove them. Leave them and ask the administrator. This does not affect reading or copying the files, which works normally.'),
+              h('"The disk is full"'),
+              code('df -h ~                 # space left on your home\ndu -sh ~/af3/output/*   # which output folders are big', 'on Woody'),
+              p('Each run keeps all samples and the MSA, so output folders get large. Copy results you need to your own computer and ask the administrator to clear old ones.'),
+              h('A method for any problem'),
+              ol_steps(['Read the <strong>last 20 lines</strong> of the log, not the first. The error is nearly always at the end.', 'Search the error text in the table in the previous lesson.', 'Check the three basics: <code>ls ~/af3/input</code> (file there?), <code>python3 -m json.tool ~/af3/input/yourfile.json</code> (valid JSON?), <code>nvidia-smi</code> (GPU free?).', 'Still stuck? Send the person helping you the <strong>exact command you ran</strong>, the <strong>last 20 lines</strong>, and the JSON. Not a description of them.']),
+              check('Checkpoint', ['I can detach from and re-attach to a tmux session', 'I can tell whether my job is in the search or the prediction stage', 'I know why a GPU with high memory use might not be free', 'I know how to stop my own job and not someone else\'s']),
+              quiz('Your job is running, <code>nvidia-smi</code> shows GPU 2 at 0% utilisation but 23 GB memory used. What does that most likely mean?', ['The GPU is free and broken', 'A job is running there, probably in its CPU search stage', 'The memory is leaked and can be ignored'], 1, 'AF3 reserves GPU memory up front, so it holds the card even before it computes.')
             ]
           },
           {
