@@ -175,6 +175,21 @@
   .cfoot .go{color:var(--teal);font-weight:600}
   .footnote{margin-top:3rem;font-size:.8rem;color:var(--muted)}
 
+
+  .profbox select{width:100%;padding:6px 8px;font-size:.9rem}
+  .prow,.progbox{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .prow{margin-bottom:12px}
+  .prow button,.progbox button{flex:1;background:none;border:1px solid var(--line-strong);color:var(--muted);border-radius:6px;padding:4px 6px;font-size:.78rem;white-space:nowrap}
+  .prow button:hover,.progbox button:hover{border-color:var(--teal);color:var(--teal)}
+  .progbox{display:block;margin-top:14px}
+  .progbox summary{cursor:pointer;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .progbox button{display:block;width:100%;margin:5px 0;text-align:left;padding:5px 10px}
+  .progbox button.danger{color:var(--danger);border-color:var(--danger)}
+  .progbox .hint{font-size:.72rem;color:var(--muted);margin:8px 0 0}
+  .welcome{margin-top:1.6rem;background:var(--paper-raised);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:var(--radius);padding:14px 18px;max-width:34em}
+  .wrow{display:flex;gap:8px;margin-top:10px}.wrow input{flex:1}
+  .hello{margin:.2em 0 0;color:var(--muted)}
+
   @media (max-width: 860px){
     .app{display:block}
     .side{position:fixed;inset:0 auto 0 0;width:min(320px,86vw);z-index:20;transform:translateX(-100%);transition:transform .2s}

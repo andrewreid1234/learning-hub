@@ -140,6 +140,36 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
   ok('os in transfer', !!mainEl.querySelector('.osblock') && /rsync/.test(mainEl.textContent));
   location.hash = '#/woody/long-jobs'; await tick();
   ok('woody links resolve', Array.from(document.querySelectorAll('#main a[href^="#/"]')).every(function (a) { var P = a.getAttribute('href').split('/'); return !!document.querySelector('#side a[href="#/' + P[1] + '/' + P[2] + '"]') || P[1] !== 'woody'; }));
+
+  // ---- profiles, reset, prefs ----
+  window.confirm = function () { return true; };
+  function btn(scope, label) { return Array.from(scope.querySelectorAll('button')).find(function (b) { return b.textContent === label; }); }
+  var sideEl = document.getElementById('side');
+  location.hash = '#/woody/what-is-woody'; await tick();
+  btn(document.getElementById('main'), 'Mark complete').click(); await tick();
+  ok('progress saved', sideEl.querySelectorAll('a.nav.done').length === 1, sideEl.querySelectorAll('a.nav.done').length);
+  window.prompt = function () { return 'Alice'; };
+  btn(sideEl, 'New').click(); await tick();
+  ok('new profile is empty and selected', sideEl.querySelector('.profbox select').value === 'Alice' && sideEl.querySelectorAll('a.nav.done').length === 0);
+  location.hash = '#/woody/what-is-woody'; await tick();
+  btn(document.getElementById('main'), 'Mark complete').click(); await tick();
+  btn(document.getElementById('main'), 'Mark complete'); // may move on
+  var sel = sideEl.querySelector('.profbox select'); sel.value = 'Guest'; sel.onchange(); await tick();
+  location.hash = '#/woody/what-is-woody'; await tick();
+  ok('guest progress kept separate', sideEl.querySelectorAll('a.nav.done').length === 1 && sideEl.querySelector('.profbox select').value === 'Guest');
+  btn(sideEl.querySelector('.progbox'), 'Reset this course').click(); await tick();
+  ok('reset course clears', sideEl.querySelectorAll('a.nav.done').length === 0);
+  window.prompt = function () { return 'Bob'; };
+  btn(sideEl, 'Rename').click(); await tick();
+  ok('rename', sideEl.querySelector('.profbox select').value === 'Bob' && !Array.from(sideEl.querySelectorAll('option')).some(function (o) { return o.value === 'Guest'; }));
+  window.prompt = function () { return 'alice'; }; window.alert = function () {};
+  var before = sideEl.querySelectorAll('option').length; btn(sideEl, 'New').click(); await tick();
+  ok('duplicate name refused', sideEl.querySelectorAll('option').length === before);
+  btn(sideEl, 'Delete').click(); await tick();
+  ok('delete profile', sideEl.querySelectorAll('option').length === before - 1);
+  location.hash = '#/'; await tick();
+  btn(sideEl.querySelector('.progbox'), 'Reset all progress').click(); await tick();
+  ok('reset all', document.getElementById('main').textContent.indexOf('0 of 16 complete') >= 0);
   var allText = ''; for (var q = 0; q < ids.length; q++) { location.hash = ids[q]; await tick(); allText += document.getElementById('main').textContent; }
   ok('no raw [[', allText.indexOf('[[') < 0);
   var x = new XMLHttpRequest(); x.open('POST', '/report'); x.send(JSON.stringify(R));

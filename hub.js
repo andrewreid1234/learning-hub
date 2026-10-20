@@ -6,15 +6,28 @@
 (function () {
   'use strict';
   var courses = [], widgets = {}, store = {};
-  var KEY = 'jlhub.progress.v1', OSKEY = 'jlhub.os.v1';
+  var PKEY = 'jlhub.profiles.v2', OLDKEY = 'jlhub.progress.v1', OLDOS = 'jlhub.os.v1';
   var OSES = [['win', 'Windows'], ['mac', 'Mac'], ['linux', 'Linux']];
-  var osName = detectOS();
-  function detectOS() {
-    try { var v = localStorage.getItem(OSKEY); if (v) return v; } catch (e) { /* storage blocked */ }
+  var prof = { cur: 'Guest', names: ['Guest'], prefs: {} };
+  var osName = 'linux';
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage blocked: nothing will persist */ } }
+  function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { /* storage blocked */ } }
+  function progKey(n) { return 'jlhub.progress.v2.' + encodeURIComponent(n); }
+  function guessOS() {
     var ua = (navigator.userAgent + ' ' + (navigator.platform || '')).toLowerCase();
     return /win/.test(ua) ? 'win' : /mac|iphone|ipad/.test(ua) ? 'mac' : 'linux';
   }
-  function setOS(v) { osName = v; try { localStorage.setItem(OSKEY, v); } catch (e) { /* storage blocked */ } }
+  function myPrefs() { return prof.prefs[prof.cur] || (prof.prefs[prof.cur] = {}); }
+  function saveProf() { lsSet(PKEY, JSON.stringify(prof)); }
+  function setOS(v) { osName = v; myPrefs().os = v; saveProf(); }
+  function applyPrefs() {
+    var pr = myPrefs();
+    osName = pr.os || guessOS();
+    if (pr.theme) document.documentElement.setAttribute('data-theme', pr.theme); else document.documentElement.removeAttribute('data-theme');
+  }
+  function cleanName(n) { return String(n || '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30); }
+  function nameTaken(n, except) { return prof.names.some(function (x) { return x !== except && x.toLowerCase() === n.toLowerCase(); }); }
 
   /* ---------- helpers ---------- */
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -24,8 +37,20 @@
     if (html != null) e.innerHTML = html;
     return e;
   }
-  function load() { try { store = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { store = {}; } }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* storage blocked: progress just won't persist */ } }
+  function load() {
+    var raw = lsGet(PKEY), ok = false;
+    if (raw) { try { var o = JSON.parse(raw); if (o && o.names && o.names.length && o.names.indexOf(o.cur) >= 0) { prof = o; prof.prefs = prof.prefs || {}; ok = true; } } catch (e) { /* corrupt: start fresh */ } }
+    if (!ok) {   /* first run, or upgrading from the single-user version */
+      prof = { cur: 'Guest', names: ['Guest'], prefs: {} };
+      var old = lsGet(OLDKEY), oos = lsGet(OLDOS);
+      if (old) lsSet(progKey('Guest'), old);
+      if (oos) prof.prefs.Guest = { os: oos };
+      saveProf();
+    }
+    loadStore(); applyPrefs();
+  }
+  function loadStore() { try { store = JSON.parse(lsGet(progKey(prof.cur))) || {}; } catch (e) { store = {}; } }
+  function save() { lsSet(progKey(prof.cur), JSON.stringify(store)); }
   function isDone(cid, lid) { return !!(store[cid] && store[cid][lid]); }
   function setDone(cid, lid, v) { store[cid] = store[cid] || {}; if (v) store[cid][lid] = 1; else delete store[cid][lid]; save(); }
   function flatLessons(c) {
@@ -119,12 +144,79 @@
     }
   };
 
+  /* ---------- profiles and progress ---------- */
+  function switchProfile(n) { prof.cur = n; saveProf(); loadStore(); applyPrefs(); route_(); }
+  function newProfile(raw) {
+    var n = cleanName(raw);
+    if (!n) { alert('Please type a name.'); return false; }
+    if (nameTaken(n)) { alert('There is already a profile called "' + n + '".'); return false; }
+    prof.names.push(n); prof.prefs[n] = { os: osName, theme: myPrefs().theme }; prof.cur = n; saveProf(); store = {}; save(); applyPrefs(); route_(); return true;
+  }
+  function renameProfile(raw) {
+    var n = cleanName(raw), old = prof.cur;
+    if (!n || n === old) return false;
+    if (nameTaken(n, old)) { alert('There is already a profile called "' + n + '".'); return false; }
+    var data = lsGet(progKey(old));
+    prof.names[prof.names.indexOf(old)] = n; prof.prefs[n] = prof.prefs[old] || {}; delete prof.prefs[old]; prof.cur = n;
+    if (data != null) lsSet(progKey(n), data);
+    lsDel(progKey(old)); saveProf(); route_(); return true;
+  }
+  function deleteProfile() {
+    if (prof.names.length < 2) { alert('This is your only profile, so it cannot be deleted. Use "Reset all progress" to clear it instead.'); return; }
+    if (!confirm('Delete the profile "' + prof.cur + '" and all of its saved progress? This cannot be undone.')) return;
+    var gone = prof.cur; lsDel(progKey(gone));
+    prof.names = prof.names.filter(function (x) { return x !== gone; }); delete prof.prefs[gone]; prof.cur = prof.names[0];
+    saveProf(); loadStore(); applyPrefs(); route_();
+  }
+  function resetCourse(c) {
+    if (!confirm('Reset your progress and checklists for "' + c.title + '"? Other courses are not affected.')) return;
+    delete store[c.id];
+    if (store._checks) Object.keys(store._checks).forEach(function (k) { if (k.indexOf(c.id + '/') === 0) delete store._checks[k]; });
+    if (store._last && store._last.cid === c.id) delete store._last;
+    save(); route_();
+  }
+  function resetAll() {
+    if (!confirm('Reset ALL progress and checklists for "' + prof.cur + '"? Your name and preferences are kept.')) return;
+    store = {}; save(); route_();
+  }
+  function exportProfile() {
+    var data = JSON.stringify({ format: 'jlhub-profile', version: 2, name: prof.cur, prefs: myPrefs(), progress: store }, null, 2);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+    a.download = 'learning-hub-' + prof.cur.replace(/[^\w.-]+/g, '_') + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function importProfile(file) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      var o; try { o = JSON.parse(rd.result); } catch (e) { alert('That file is not a Learning Hub profile.'); return; }
+      if (!o || o.format !== 'jlhub-profile' || typeof o.progress !== 'object' || o.progress === null) { alert('That file is not a Learning Hub profile.'); return; }
+      var n = cleanName(o.name) || 'Imported', base = n, i = 2;
+      while (nameTaken(n)) { n = base + ' (' + i++ + ')'; }
+      prof.names.push(n); prof.prefs[n] = (o.prefs && typeof o.prefs === 'object') ? { os: o.prefs.os, theme: o.prefs.theme } : {}; prof.cur = n; saveProf();
+      store = o.progress; save(); applyPrefs(); route_();
+    };
+    rd.readAsText(file);
+  }
+
   /* ---------- views ---------- */
   var side = null, main = null;
 
   function renderSide(route) {
     side.innerHTML = '';
     side.appendChild(el('p', { class: 'brand' }, 'Learning Hub<small>Jamieson Group</small>'));
+    var pb = el('div', { class: 'profbox' }, '<h3>Learning as</h3>');
+    var sel = el('select', { 'aria-label': 'Choose profile' });
+    prof.names.forEach(function (n) { var o = el('option', { value: n }, esc(n)); if (n === prof.cur) o.selected = true; sel.appendChild(o); });
+    sel.onchange = function () { switchProfile(sel.value); };
+    pb.appendChild(sel);
+    var prow = el('div', { class: 'prow' });
+    [['New', function () { var n = prompt('Name for the new profile:'); if (n !== null) newProfile(n); }],
+     ['Rename', function () { var n = prompt('New name for "' + prof.cur + '":', prof.cur); if (n !== null) renameProfile(n); }],
+     ['Delete', deleteProfile]].forEach(function (x) { var b = el('button', { type: 'button' }, x[0]); b.onclick = x[1]; prow.appendChild(b); });
+    pb.appendChild(prow);
+    side.appendChild(pb);
     var home = el('a', { class: 'nav' + (!route.cid ? ' active' : ''), href: '#/' }, '<span>All courses</span>');
     side.appendChild(home);
     if (!route.cid) {
@@ -160,13 +252,24 @@
     th.onclick = function () {
       var cur = document.documentElement.getAttribute('data-theme');
       var dark = cur ? cur === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+      myPrefs().theme = dark ? 'light' : 'dark'; saveProf(); applyPrefs();
     };
     var pr = el('button', { type: 'button' }, 'Print page'); pr.onclick = function () { window.print(); };
-    var rs = el('button', { type: 'button' }, 'Reset'); rs.title = 'Clear saved progress';
-    rs.onclick = function () { if (confirm('Clear all saved progress and checklists?')) { store = {}; save(); route_(); } };
-    tools.appendChild(th); tools.appendChild(pr); tools.appendChild(rs);
+    tools.appendChild(th); tools.appendChild(pr);
     side.appendChild(tools);
+    var pg = el('details', { class: 'progbox' }, '<summary>Progress</summary>');
+    var cc = route.cid && courses.find(function (x) { return x.id === route.cid; });
+    var items = [];
+    if (cc) items.push(['Reset this course', function () { resetCourse(cc); }, 'danger']);
+    items.push(['Reset all progress', resetAll, 'danger']);
+    items.push(['Export my progress', exportProfile]);
+    var imp = el('input', { type: 'file', accept: '.json,application/json', style: 'display:none', 'aria-label': 'Import progress file' });
+    imp.onchange = function () { if (imp.files[0]) importProfile(imp.files[0]); };
+    items.push(['Import progress', function () { imp.click(); }]);
+    items.forEach(function (x) { var b = el('button', { type: 'button', class: x[2] || '' }, x[0]); b.onclick = x[1]; pg.appendChild(b); });
+    pg.appendChild(imp);
+    pg.appendChild(el('p', { class: 'hint' }, 'Profiles and progress are stored in this browser only. Export a file to move yours to another computer.'));
+    side.appendChild(pg);
   }
 
   function plain(html) { return String(html || '').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\[\[|\]\]/g, ''); }
@@ -220,6 +323,8 @@
     var firstC = courses[0], firstL = firstC && flatLessons(firstC)[0].l;
 
     var hero = el('section', { class: 'landing' });
+    var fresh = prof.names.length === 1 && prof.cur === 'Guest' && !total0();
+    function total0() { return Object.keys(store).some(function (k) { return k.charAt(0) !== '_'; }); }
     hero.appendChild(el('div', { class: 'eyebrow' }, 'Jamieson Group &middot; School of Chemistry, University of Glasgow'));
     hero.appendChild(el('h1', null, 'Learn the tools.<br>Run them yourself.'));
     hero.appendChild(el('p', { class: 'lede' }, 'Step-by-step, hands-on courses for the software we use on Woody, our shared GPU server. Written for complete beginners, with shortcuts for experienced users. Everything is done by you, by hand, so nothing needs an assistant to run.'));
@@ -237,6 +342,17 @@
       cta.appendChild(browse());
     }
     hero.appendChild(cta);
+    if (fresh) {
+      var wc = el('div', { class: 'welcome' }, '<strong>What should we call you?</strong><span class="muted"> Optional. A name lets you keep your progress and settings separate from other people using this computer.</span>');
+      var wi = el('input', { type: 'text', placeholder: 'Your name', maxlength: '30', 'aria-label': 'Your name' });
+      var wb = el('button', { type: 'button', class: 'btn' }, 'Save name');
+      wb.onclick = function () { if (renameProfile(wi.value)) { /* route_ re-renders */ } };
+      wi.onkeydown = function (e) { if (e.key === 'Enter') wb.onclick(); };
+      var wr = el('div', { class: 'wrow' }); wr.appendChild(wi); wr.appendChild(wb); wc.appendChild(wr);
+      hero.appendChild(wc);
+    } else if (prof.cur !== 'Guest') {
+      hero.insertBefore(el('p', { class: 'hello' }, 'Welcome back, <strong>' + esc(prof.cur) + '</strong>.'), cta);
+    }
     var stats = el('div', { class: 'stats' });
     stats.appendChild(el('div', null, '<b>' + courses.length + '</b><span>courses</span>'));
     stats.appendChild(el('div', null, '<b>' + total + '</b><span>lessons</span>'));
