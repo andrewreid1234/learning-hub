@@ -60,11 +60,11 @@
             id: 'access', title: 'What you need before you start', blocks: [
               p('Ask your supervisor or the person who administers Woody for:'),
               ul(['<strong>An account:</strong> a username and an initial password (or key).', '<strong>The address:</strong> <code>' + HOST + '</code>.', '<strong>Membership of the <code>docker</code> group</strong>, if you will run AlphaFold3 or other containerised software. Without it Docker refuses to start.']),
-              co('todo', 'To confirm with the lab', '<p>Whether you can reach Woody from off campus directly or need the University VPN. If you are at home and the connection simply times out, this is the first thing to check. Ask your supervisor.</p>'),
+              co('note', 'Off campus', '<p>Woody can only be reached from the <strong>University wifi</strong> or through the <strong>Cisco VPN</strong>. At home or on a mobile network, connect to the VPN first, then follow the steps in this course. If a connection simply times out, this is almost always the reason.</p>'),
               h('Two tools, two jobs'),
               ul(['A <strong>terminal</strong> for typing commands on Woody.', 'A <strong>file-transfer tool</strong> for moving files between your computer and Woody.']),
               p('Which ones you use depends on your computer. Choose your operating system in Settings (the cog at the bottom of the sidebar), or with the switch above any OS-specific steps. The rest of this course follows it.'),
-              check('Checkpoint', ['I have a username and password', 'I know the address, ' + HOST, 'I know whether I need the VPN from home'])
+              check('Checkpoint', ['I have a username and password', 'I know the address, ' + HOST, 'I am on University wifi, or I have the Cisco VPN connected'])
             ]
           },
           {
@@ -364,7 +364,7 @@
                 ['Missing files', 'Wrong path, or cleaned from <code>/scratch</code>', '<code>find</code> to search; check whether it was ever copied to <code>/data</code>'],
                 ['Frozen terminal', 'A long-running foreground process, or a dropped connection', 'Open a new session rather than force-closing. Do not kill jobs you do not recognise'],
                 ['Storage full', 'Old runs left in <code>/scratch</code>', '<code>du -sh */</code> to find the culprit, then clean up your own'],
-                ['Connection times out', 'Off campus without the VPN, or wrong address', 'Check the address and ask about the VPN'],
+                ['Connection times out', 'Not on University wifi and the Cisco VPN is not connected, or wrong address', 'Join University wifi or connect the Cisco VPN, then check the address'],
                 ['Job vanished on disconnect', 'Not in tmux', 'Always start long jobs in tmux']
               ]),
               h('A method for any problem'),

@@ -796,11 +796,11 @@
             id: 'access', title: 'What you need before you start', blocks: [
               p('Ask your supervisor or the person who administers Woody for:'),
               ul(['<strong>An account:</strong> a username and an initial password (or key).', '<strong>The address:</strong> <code>' + HOST + '</code>.', '<strong>Membership of the <code>docker</code> group</strong>, if you will run AlphaFold3 or other containerised software. Without it Docker refuses to start.']),
-              co('todo', 'To confirm with the lab', '<p>Whether you can reach Woody from off campus directly or need the University VPN. If you are at home and the connection simply times out, this is the first thing to check. Ask your supervisor.</p>'),
+              co('note', 'Off campus', '<p>Woody can only be reached from the <strong>University wifi</strong> or through the <strong>Cisco VPN</strong>. At home or on a mobile network, connect to the VPN first, then follow the steps in this course. If a connection simply times out, this is almost always the reason.</p>'),
               h('Two tools, two jobs'),
               ul(['A <strong>terminal</strong> for typing commands on Woody.', 'A <strong>file-transfer tool</strong> for moving files between your computer and Woody.']),
               p('Which ones you use depends on your computer. Choose your operating system in Settings (the cog at the bottom of the sidebar), or with the switch above any OS-specific steps. The rest of this course follows it.'),
-              check('Checkpoint', ['I have a username and password', 'I know the address, ' + HOST, 'I know whether I need the VPN from home'])
+              check('Checkpoint', ['I have a username and password', 'I know the address, ' + HOST, 'I am on University wifi, or I have the Cisco VPN connected'])
             ]
           },
           {
@@ -1100,7 +1100,7 @@
                 ['Missing files', 'Wrong path, or cleaned from <code>/scratch</code>', '<code>find</code> to search; check whether it was ever copied to <code>/data</code>'],
                 ['Frozen terminal', 'A long-running foreground process, or a dropped connection', 'Open a new session rather than force-closing. Do not kill jobs you do not recognise'],
                 ['Storage full', 'Old runs left in <code>/scratch</code>', '<code>du -sh */</code> to find the culprit, then clean up your own'],
-                ['Connection times out', 'Off campus without the VPN, or wrong address', 'Check the address and ask about the VPN'],
+                ['Connection times out', 'Not on University wifi and the Cisco VPN is not connected, or wrong address', 'Join University wifi or connect the Cisco VPN, then check the address'],
                 ['Job vanished on disconnect', 'Not in tmux', 'Always start long jobs in tmux']
               ]),
               h('A method for any problem'),
@@ -1723,7 +1723,7 @@ window.AF3_REAL = {"ffa4_monomer":{"name":"ffa4_monomer","n":297,"tokenChains":[
               p('AlphaFold3 runs on <strong>Woody</strong>, the group\'s shared Linux server, which has the GPUs, the AlphaFold3 install and the genetic databases (~630 GB). You never install anything yourself. You work on it remotely from your own computer.'),
               co('summary', 'Start with the Using Woody course if you are new', '<p>Logging in, the terminal, files, moving files and tmux are covered properly, for Windows, Mac and Linux, in the <a href="#/woody/what-is-woody"><strong>Using Woody</strong></a> course. This lesson only lists what you need for AlphaFold3 specifically.</p>'),
               h('What you need'),
-              ul(['A Woody account and the address <code>woody.chem.gla.ac.uk</code> (<a href="#/woody/connecting">Connecting for the first time</a>).', 'Membership of the <code>docker</code> group. Without it AlphaFold3 refuses to start. Ask the administrator.', 'A file-transfer tool to upload input files and download results (<a href="#/woody/transfer">Moving files to and from Woody</a>).', 'A comfortable minimum of terminal skills: <code>cd</code>, <code>ls</code>, <code>mkdir</code>, <code>nano</code> (<a href="#/woody/navigate">Moving around and handling files</a>).']),
+              ul(['A Woody account and the address <code>woody.chem.gla.ac.uk</code>, reached from University wifi or the Cisco VPN (<a href="#/woody/connecting">Connecting for the first time</a>).', 'Membership of the <code>docker</code> group. Without it AlphaFold3 refuses to start. Ask the administrator.', 'A file-transfer tool to upload input files and download results (<a href="#/woody/transfer">Moving files to and from Woody</a>).', 'A comfortable minimum of terminal skills: <code>cd</code>, <code>ls</code>, <code>mkdir</code>, <code>nano</code> (<a href="#/woody/navigate">Moving around and handling files</a>).']),
               h('Create the AlphaFold3 folders'),
               code('mkdir -p ~/af3/input ~/af3/output ~/af3/logs\nls ~/af3', 'on Woody'),
               p('That makes the three folders AlphaFold3 uses: <code>input</code> (your JSON files), <code>output</code> (results) and <code>logs</code>. If they already exist nothing happens, which is fine.'),

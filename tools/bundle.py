@@ -1,6 +1,6 @@
 """Inline hub.js and every <script src> between the COURSES markers into one standalone HTML file."""
 import re, os, sys
-root = os.path.expanduser('~/projects/learning-hub')
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 html = open(f'{root}/index.html').read()
 def inline(m):
     src = m.group(1)
