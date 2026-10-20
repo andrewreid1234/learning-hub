@@ -26,3 +26,5 @@ The order of the `<script>` tags in `../index.html` matters. Widget files and `r
 - Check every command, flag, path and number against the real install before writing it down, and say so in the lesson when something could not be checked.
 - Only use published or constructed examples (ubiquitin, FFA4 with TUG-891). This repository is public, so no unpublished data.
 - Machine-specific values (the Woody address, `/data/20260825_AndrewR_af3`, `/scratch/drewdog/boltz`) live in the lessons that use them. Search for them if Woody changes.
+
+Back to the [main README](../README.md).
