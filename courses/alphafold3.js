@@ -173,6 +173,7 @@
               h('Step 3: launch'),
               p('Change the two highlighted parts (the GPU number and your file name) and paste. The <strong>Copy</strong> button strips the highlighting.'),
               code(DOCKER_BASE, 'on Woody, inside tmux'),
+              co('note', 'Leaving the job running (detaching from tmux)', '<p>Once the log lines are scrolling, <strong>do not press Ctrl+C and do not type <code>exit</code></strong>: both stop the job. Instead press <kbd>Ctrl</kbd>+<kbd>B</kbd>, <em>let go of both keys</em>, then press <kbd>D</kbd>. You are returned to a normal prompt and the job carries on. You can now close the window. Come back later with <code>tmux attach -t af3</code>. Typing the keys together as one chord is the usual reason it seems not to work.</p>'),
               p('You will see a stream of log lines. There is no progress bar. A small protein may take only a few minutes; <strong>FFA4 at 297 residues took ~7 minutes just for the search</strong>. Long silence without GPU activity is normal during the search.'),
               co('mistake', 'Do not', '<ul><li>Close the terminal without tmux.</li><li>Start a second job on the same GPU without checking it is free.</li><li>Re-run with the same <code>name</code> expecting an overwrite: AF3 makes a new time-stamped folder instead.</li></ul>'),
               h('Step 4: look at the result'),
