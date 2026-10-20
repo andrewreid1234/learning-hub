@@ -9,10 +9,11 @@ Interactive, hands-on courses for the software the Jamieson group uses on **Wood
 | Course | Start here if | Lessons |
 |---|---|---|
 | **Using Woody** | You are new to Woody or to the Linux terminal. Take this first. | 16 |
+| **Python for Chemists (part 1)** | You want to script and automate your work: environments, the basics, files, FASTA and CSV, tables and plots. Runs on Woody. Part 2 (RDKit, batch automation) is planned. | 13 |
 | **AlphaFold3 on Woody** | You need to predict a structure or a protein-ligand complex. | 21 |
 | **Boltz-2 on Woody** | You want a second predictor, or binding-affinity prediction. | 16 |
 
-Using Woody covers connecting, the terminal, files and storage, environments, tmux and shared-machine etiquette. The AlphaFold3 and Boltz-2 courses cover setting up a run, every parameter and how to tune it per experiment, and reading the results. They include interactive tools: an input builder, a parameter explorer, a command builder, a confidence-score trainer using real FFA4 outputs, and a triage game.
+Using Woody covers connecting, the terminal, files and storage, environments, tmux and shared-machine etiquette. Python for Chemists teaches the Python needed for the rest, with real drugs and proteins, and ends by turning a FASTA file into a folder of AlphaFold3 input files. The AlphaFold3 and Boltz-2 courses cover setting up a run, every parameter and how to tune it per experiment, and reading the results. They include interactive tools: an input builder, a parameter explorer, a command builder, a confidence-score trainer using real FFA4 outputs, and a triage game.
 
 Woody is reachable from the University wifi or through the Cisco VPN.
 

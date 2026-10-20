@@ -70,10 +70,12 @@
   }
 
   /* code block: text may mark swap-in parts as [[like this]] (highlighted, brackets stripped when copied) */
-  function codeBlock(text, label) {
-    var raw = text.replace(/\[\[(.*?)\]\]/g, '$1');
-    var shown = esc(text).replace(/\[\[(.*?)\]\]/g, '<span class="swap">$1</span>');
+  /* literal: true turns the [[swap]] highlighting off, for code that really contains double square brackets (pandas df[["a", "b"]]) */
+  function codeBlock(text, label, literal) {
+    var raw = literal ? text : text.replace(/\[\[(.*?)\]\]/g, '$1');
+    var shown = literal ? esc(text) : esc(text).replace(/\[\[(.*?)\]\]/g, '<span class="swap">$1</span>');
     var wrap = el('div', { class: 'codewrap' });
+    if (literal) wrap.setAttribute('data-literal', '1');
     var bar = el('div', { class: 'codelabel' }, '<span>' + esc(label || '') + '</span>');
     var btn = el('button', { class: 'copy', type: 'button' }, 'Copy');
     btn.onclick = function () { copyText(raw, btn); };
@@ -90,7 +92,7 @@
     p: function (b) { return el('p', null, b.html); },
     html: function (b) { var d = el('div', null, b.html); return d; },
     list: function (b) { var l = el(b.ordered ? 'ol' : 'ul'); b.items.forEach(function (i) { l.appendChild(el('li', null, i)); }); return l; },
-    code: function (b) { return codeBlock(b.text, b.label); },
+    code: function (b) { return codeBlock(b.text, b.label, b.literal); },
     callout: function (b) {
       var k = b.kind || 'summary';
       return el('div', { class: 'callout callout-' + k }, '<span class="label">' + esc(b.label || k) + '</span><div>' + b.html + '</div>');
