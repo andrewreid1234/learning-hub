@@ -7,6 +7,7 @@ The content of the Learning Hub. Each course is a plain JavaScript file that reg
 | File | What it is |
 |---|---|
 | `woody.js` | **Using Woody** (16 lessons, 7 modules). Connecting, the Linux terminal, files and storage, environments, tmux and etiquette. Ported from the handbook's Woody Guide, Volume 1. This is the simplest file to copy when writing a new course. |
+| `python.js` | **Python for Chemists, part 1** (13 lessons, 3 modules). Setting up a conda environment, running scripts, the basics, reading errors, files, FASTA, JSON, pandas and plots. Every code block and promised output was run on Woody; `../tools/check_python_examples.py` re-checks them. Contains `lit(...)` for code with real `[[ ]]`, which would otherwise be treated as a swap marker. |
 | `alphafold3.js` | **AlphaFold3 on Woody** (21 lessons, 7 modules). Setting up a run, the input JSON, every parameter, docking-style experiments, viewing and reading results, troubleshooting. |
 | `alphafold3-widgets.js` | The interactive tools used by the AlphaFold3 course: `jsonbuilder` (input JSON builder), `paramref` (parameter explorer, reused by other courses through `Hub.paramSets`), `cmdbuilder` (command builder with per-experiment recipes), `scorecalc` (ranking-score calculator), `resulttrainer` (results trainer) and `triage` (triage game), and `samplesdemo` (what more diffusion samples do, using real scores). |
 | `boltz.js` | **Boltz-2 on Woody** (16 lessons, 7 modules). Includes MSA handling, affinity prediction, cyclic peptides and constraints. |
@@ -20,7 +21,7 @@ The order of the `<script>` tags in `../index.html` matters. Widget files and `r
 ## Conventions
 
 - Each course file starts with short helper functions (`p`, `h`, `code`, `co`, `check`, `quiz`, `os`, and so on) that build block objects. The block types are listed in the top-level README.
-- In a `code` block, `[[like this]]` marks text the reader must replace. The highlighting is removed when they copy the block.
+- In a `code` block, `[[like this]]` marks text the reader must replace. The highlighting is removed when they copy the block. If the code itself contains double square brackets (pandas `df[["a", "b"]]`), make the block literal (`literal: true`, the `lit` helper in `python.js`) so nothing is stripped.
 - Lesson ids must be unique within a course, and links between lessons use `#/<course-id>/<lesson-id>`. Renaming a lesson id breaks links to it from other courses, so search for the old id first.
 - Use an `os` block wherever a step differs between Windows, Mac and Linux.
 - Check every command, flag, path and number against the real install before writing it down, and say so in the lesson when something could not be checked.
