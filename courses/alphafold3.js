@@ -46,21 +46,21 @@
               os({
                 win: [
                   table(['Job', 'Tool'], [['Terminal', '<strong>PowerShell</strong> or <strong>Windows Terminal</strong>. Windows 10/11 already include <code>ssh</code>. Open the Start menu, type <code>powershell</code>, press Enter.'], ['File transfer', '<strong>WinSCP</strong> (free download), a drag-and-drop window.']]),
-                  code('ssh [[your-username]]@[[woody-address]]', 'in PowerShell, on your own computer'),
-                  ol_steps(['In WinSCP choose <strong>New Session</strong>. File protocol: SFTP. Host name: Woody\'s address. Port 22. Your username.', 'Click <strong>Save</strong> and give the session a name (e.g. <code>woody</code>).', 'Log in. The left pane is your PC, the right is Woody. Drag files between them.'])
+                  code('ssh [[your-username]]@woody.chem.gla.ac.uk', 'in PowerShell, on your own computer'),
+                  ol_steps(['In WinSCP choose <strong>New Session</strong>. File protocol: SFTP. Host name: woody.chem.gla.ac.uk. Port 22. Your username.', 'Click <strong>Save</strong> and give the session a name (e.g. <code>woody</code>).', 'Log in. The left pane is your PC, the right is Woody. Drag files between them.'])
                 ],
                 mac: [
                   table(['Job', 'Tool'], [['Terminal', '<strong>Terminal</strong> (press Cmd+Space, type <code>Terminal</code>, Enter). <code>ssh</code>, <code>scp</code> and <code>rsync</code> are built in.'], ['File transfer', '<strong>Cyberduck</strong> (free, drag and drop; choose the SFTP protocol), or <code>scp</code> / <code>rsync</code> in Terminal.']]),
-                  code('ssh [[your-username]]@[[woody-address]]', 'in Terminal, on your own computer'),
-                  ol_steps(['In Cyberduck choose <strong>Open Connection</strong>. Protocol: SFTP. Server: Woody\'s address. Port 22. Your username.', 'Bookmark it so you can reconnect in one click.', 'Drag files between the Cyberduck window and Finder.'])
+                  code('ssh [[your-username]]@woody.chem.gla.ac.uk', 'in Terminal, on your own computer'),
+                  ol_steps(['In Cyberduck choose <strong>Open Connection</strong>. Protocol: SFTP. Server: woody.chem.gla.ac.uk. Port 22. Your username.', 'Bookmark it so you can reconnect in one click.', 'Drag files between the Cyberduck window and Finder.'])
                 ],
                 linux: [
-                  table(['Job', 'Tool'], [['Terminal', 'Any terminal (often Ctrl+Alt+T). <code>ssh</code>, <code>scp</code> and <code>rsync</code> are normally installed.'], ['File transfer', 'Your file manager: choose <em>Connect to Server</em> and enter <code>sftp://your-username@woody-address</code>. Or use <code>scp</code> / <code>rsync</code> in the terminal.']]),
-                  code('ssh [[your-username]]@[[woody-address]]', 'in a terminal, on your own computer')
+                  table(['Job', 'Tool'], [['Terminal', 'Any terminal (often Ctrl+Alt+T). <code>ssh</code>, <code>scp</code> and <code>rsync</code> are normally installed.'], ['File transfer', 'Your file manager: choose <em>Connect to Server</em> and enter <code>sftp://your-username@woody.chem.gla.ac.uk</code>. Or use <code>scp</code> / <code>rsync</code> in the terminal.']]),
+                  code('ssh [[your-username]]@woody.chem.gla.ac.uk', 'in a terminal, on your own computer')
                 ]
               }),
               p('Replace the two highlighted parts. The first time you connect, it asks you to trust the server: type <code>yes</code>. When it works you will see a prompt such as <code>[you@woody ~]$</code>. That <code>$</code> means Woody is waiting for a command. Every command block in this course is typed on Woody unless its label says <em>on your own computer</em>.'),
-              co('todo', 'TODO for the lab', '<p>Fill in Woody\'s real address/hostname here, and whether off-campus access needs the university VPN. The course deliberately does not guess these.</p>'),
+              co('todo', 'TODO for the lab', '<p>Woody\'s address is <code>woody.chem.gla.ac.uk</code>. Still to confirm: whether off-campus access needs the university VPN. Until a maintainer fills that in, ask your supervisor or the lab admin before you try from home.</p>'),
               check('Checkpoint', ['I can log in with SSH and see a prompt ending in $', 'I can see my Woody home folder in my file-transfer tool', 'I know my username and who to ask about the docker group']),
               quiz('You see the prompt <code>[you@woody ~]$</code>. Where are you?', ['On my own laptop', 'On Woody, in my home folder', 'Inside the AlphaFold3 container'], 1, 'The <code>~</code> means your home folder, and <code>woody</code> is the machine you are logged in to.')
             ]
@@ -318,11 +318,11 @@
                 ],
                 mac: [
                   p('<strong>Cyberduck:</strong> drag the folder to Finder. Or in Terminal (<code>rsync</code> only copies what is new, so it is quick to repeat):'),
-                  code('rsync -av [[your-username]]@[[woody-address]]:~/af3/output/[[job_name]] ~/Downloads/', 'in Terminal, on your own computer')
+                  code('rsync -av [[your-username]]@woody.chem.gla.ac.uk:~/af3/output/[[job_name]] ~/Downloads/', 'in Terminal, on your own computer')
                 ],
                 linux: [
                   p('From your file manager (the <code>sftp://</code> connection), or in a terminal (<code>rsync</code> only copies what is new, so it is quick to repeat):'),
-                  code('rsync -av [[your-username]]@[[woody-address]]:~/af3/output/[[job_name]] ~/Downloads/', 'in a terminal, on your own computer')
+                  code('rsync -av [[your-username]]@woody.chem.gla.ac.uk:~/af3/output/[[job_name]] ~/Downloads/', 'in a terminal, on your own computer')
                 ]
               }),
               p('Then open the <code>.cif</code> in a molecular viewer:'),
