@@ -2,6 +2,7 @@
 <body><div class="app"><nav class="side" id="side"></nav><main id="main"></main></div><button id="menuBtn"></button>
 <script src="../hub.js"></script>
 <script src="../courses/woody.js"></script>
+<script src="../courses/python.js"></script>
 <script src="../courses/real-examples.js"></script>
 <script src="../courses/alphafold3-widgets.js"></script>
 <script src="../courses/alphafold3.js"></script>
@@ -15,12 +16,11 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
 (async function () {
   Hub.start();
   var ids = [];
-  ok('landing hero', !!document.querySelector('.landing h1') && document.querySelectorAll('.coursecard').length === 3, document.querySelectorAll('.coursecard').length);
+  ok('landing hero', !!document.querySelector('.landing h1') && document.querySelectorAll('.coursecard').length === 4, document.querySelectorAll('.coursecard').length);
   var inp = document.querySelector('.searchbox input'); inp.value = 'tmux'; inp.oninput(); await tick();
   ok('search finds tmux', document.querySelectorAll('.result').length >= 2, document.querySelectorAll('.result').length);
   inp.value = 'zzzqqq'; inp.oninput(); ok('search no match', document.querySelectorAll('.result').length === 0);
-  ['woody', 'alphafold3', 'boltz'].forEach(function (cid) { /* collected below */ });
-  for (var ci = 0, cs = ['woody', 'alphafold3', 'boltz']; ci < cs.length; ci++) {
+    for (var ci = 0, cs = ['woody', 'python', 'alphafold3', 'boltz']; ci < cs.length; ci++) {
     location.hash = '#/' + cs[ci] + '/x'; await tick();
     document.querySelectorAll('#side a.nav').forEach(function (a) { var h = a.getAttribute('href'); if (h.split('/').length === 3 && h.indexOf('#/' + cs[ci] + '/') === 0 && ids.indexOf(h) < 0) ids.push(h); });
   }
@@ -30,7 +30,7 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
     if (/Widget error|Missing widget/.test(m.textContent)) R.errors.push('widget problem in ' + ids[i] + ': ' + m.textContent.match(/(Widget error|Missing widget)[^\n]{0,80}/)[0]);
     if (!m.querySelector('h1')) R.errors.push('no h1 ' + ids[i]);
   }
-  ok('lessons rendered', R.lessons >= 50, R.lessons);
+  ok('lessons rendered', R.lessons >= 65, R.lessons);
 
   // JSON builder presets
   location.hash = '#/alphafold3/ubiquitin'; await tick();
@@ -188,7 +188,16 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
   await go('#/settings'); btn(mainEl2, 'Reset all progress').click(); await tick();
   ok('reset all', mainEl2.textContent.indexOf('1 of 16') < 0);
   var pr = mainEl2.querySelectorAll('.setcard select')[1]; ok('print picker lists lessons', pr && pr.options.length >= 50, pr && pr.options.length);
-  var allText = ''; for (var q = 0; q < ids.length; q++) { location.hash = ids[q]; await tick(); allText += document.getElementById('main').textContent; }
+  var allText = ''; R.pyblocks = [];
+  for (var q = 0; q < ids.length; q++) {
+    location.hash = ids[q]; await tick();
+    var mt = document.getElementById('main');
+    if (ids[q].indexOf('#/python/') === 0) {
+      Array.prototype.forEach.call(mt.querySelectorAll('.codewrap'), function (w) { R.pyblocks.push([ids[q], w.querySelector('.codelabel span').textContent, w.querySelector('pre').textContent, !!w.getAttribute('data-literal')]); });
+    } else allText += mt.textContent;
+  }
+  ok('python literal blocks keep [[ ]]', R.pyblocks.filter(function (b) { return b[3]; }).length >= 2 && R.pyblocks.filter(function (b) { return b[3]; }).every(function (b) { return b[2].indexOf('[[') >= 0; }));
+  ok('python non-literal blocks have no stray [[', R.pyblocks.filter(function (b) { return !b[3]; }).every(function (b) { return b[2].indexOf('[[') < 0; }));
   ok('no raw [[', allText.indexOf('[[') < 0);
   var x = new XMLHttpRequest(); x.open('POST', '/report'); x.send(JSON.stringify(R));
 })().catch(function (e) { R.errors.push('harness: ' + e.stack); var x = new XMLHttpRequest(); x.open('POST', '/report'); x.send(JSON.stringify(R)); });
