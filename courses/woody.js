@@ -241,7 +241,28 @@
           },
           {
             id: 'transfer', title: 'Moving files to and from Woody', blocks: [
-              p('Most of what you do here is uploading an input file and downloading a result. Pick your operating system with the switch just below.'),
+              p('Most of what you do here is uploading an input file and downloading a result. There are two ways: the <code>scp</code> command, which needs nothing installed, and a drag-and-drop program. Either works. Both use your normal Woody login, so you must be on University wifi or the Cisco VPN.'),
+              h('Option 1: the scp command (nothing to install)'),
+              p('<code>scp</code> copies files over the same secure connection as <code>ssh</code>. It is already on Windows 10 and 11 (in PowerShell or Windows Terminal), on Macs and on Linux. The pattern is always <code>scp  FROM  TO</code>, and the Woody end is written <code>username@' + HOST + ':path</code>. <strong>Run it in a terminal on your own computer, not inside your Woody session.</strong> It asks for your Woody password, just like <code>ssh</code>.'),
+              os({
+                win: [
+                  code('# Upload one file from the folder you are in (your PC) to your Woody home folder\nscp ubiquitin_monomer.json [[your-username]]@' + HOST + ':~/af3/input/\n\n# Download one file from Woody into the folder you are in\nscp [[your-username]]@' + HOST + ':~/af3/output/[[job_name]]/[[job_name]]_model.cif .\n\n# Download a whole folder (-r means recursive)\nscp -r [[your-username]]@' + HOST + ':~/af3/output/[[job_name]] .', 'in PowerShell, on your own computer'),
+                  p('First move PowerShell to the folder you want to work from, for example <code>cd $HOME\\Downloads</code>, so you can use short names. The <code>.</code> at the end of a download means &ldquo;put it here&rdquo;. If you do give a full Windows path, use quotes, for example <code>"C:\\Users\\you\\Documents\\input.json"</code>.')
+                ],
+                mac: [
+                  code('# Upload one file from the folder you are in (your Mac) to your Woody home folder\nscp ubiquitin_monomer.json [[your-username]]@' + HOST + ':~/af3/input/\n\n# Download one file from Woody into the folder you are in\nscp [[your-username]]@' + HOST + ':~/af3/output/[[job_name]]/[[job_name]]_model.cif .\n\n# Download a whole folder (-r means recursive)\nscp -r [[your-username]]@' + HOST + ':~/af3/output/[[job_name]] ~/Downloads/', 'in Terminal, on your own computer'),
+                  p('The <code>.</code> at the end of a download means &ldquo;put it here&rdquo;, in the folder your Terminal is in. Use <code>cd ~/Downloads</code> first if you want it there.')
+                ],
+                linux: [
+                  code('# Upload one file from the folder you are in to your Woody home folder\nscp ubiquitin_monomer.json [[your-username]]@' + HOST + ':~/af3/input/\n\n# Download one file from Woody into the folder you are in\nscp [[your-username]]@' + HOST + ':~/af3/output/[[job_name]]/[[job_name]]_model.cif .\n\n# Download a whole folder (-r means recursive)\nscp -r [[your-username]]@' + HOST + ':~/af3/output/[[job_name]] ~/Downloads/', 'in a terminal, on your own computer'),
+                  p('The <code>.</code> at the end of a download means &ldquo;put it here&rdquo;, in the folder your terminal is in.')
+                ]
+              }),
+              p('If you set up the <code>woody</code> shortcut in Module 2, you can write it more briefly: <code>scp results.csv woody:~/af3/input/</code>.'),
+              co('mistake', 'scp gotchas', '<ul><li><strong>Which computer am I on?</strong> If you type an <code>scp</code> command inside your Woody session, it tries to copy from Woody to Woody. Open a second terminal on your own computer.</li><li><strong>It overwrites without asking.</strong> If a file of the same name is already at the destination, it is replaced.</li><li><strong>A path with spaces needs quotes</strong> around it.</li><li><strong>It cannot resume.</strong> If a big transfer breaks, you start again. On Mac and Linux, <code>rsync</code> (below) can pick up where it stopped.</li></ul>'),
+              co('note', 'Not yet tried on every system', '<p>The <code>scp</code> format is standard OpenSSH, but these exact examples have not been run from a Windows or Mac machine yet. If one behaves differently on yours, tell the course maintainer.</p>'),
+              h('Option 2: a drag-and-drop program'),
+              p('Prefer to drag and drop? Pick your operating system with the switch just below.'),
               os({
                 win: [
                   h('WinSCP (drag and drop)'),
@@ -384,6 +405,8 @@
               p('Everything above, compressed. Print it from <strong>Settings</strong> (the cog, bottom left) and pin it above your desk.'),
               table(['Connect and transfer', ''], [
                 ['<code>ssh woody</code>', 'connect (after setting up the shortcut)'],
+                ['<code>scp file user@woody.chem.gla.ac.uk:path</code>', 'upload (run on your own computer; nothing to install)'],
+                ['<code>scp [-r] user@woody.chem.gla.ac.uk:path .</code>', 'download a file or, with <code>-r</code>, a folder'],
                 ['WinSCP / Cyberduck / <code>sftp://</code>', 'drag and drop files'],
                 ['<code>rsync -avz src/ dest/</code>', 'sync folders (run on your own computer)']
               ]),

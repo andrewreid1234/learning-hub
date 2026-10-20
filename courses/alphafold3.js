@@ -312,7 +312,7 @@
         id: 'results', title: 'Module 5: Reading results', lessons: [
           {
             id: 'get-files', title: 'Getting results onto your PC', blocks: [
-              p('The structure you want is <code>&lt;job&gt;_model.cif</code> in <code>~/af3/output/&lt;job&gt;/</code>. Copy the whole job folder to your computer. Pick your OS in the sidebar:'),
+              p('The structure you want is <code>&lt;job&gt;_model.cif</code> in <code>~/af3/output/&lt;job&gt;/</code>. Copy the whole job folder to your computer. The quickest way with nothing to install is <code>scp -r</code>: see <a href="#/woody/transfer">Moving files to and from Woody</a>. Or use a drag-and-drop tool, with the steps for your OS:'),
               os({
                 win: [
                   p('<strong>WinSCP:</strong> drag the folder across, or use <strong>Synchronize</strong> to mirror <code>~/af3/output</code> to a folder on your PC.')
