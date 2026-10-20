@@ -7,8 +7,8 @@ The content of the Learning Hub. Each course is a plain JavaScript file that reg
 | File | What it is |
 |---|---|
 | `woody.js` | **Using Woody** (16 lessons, 7 modules). Connecting, the Linux terminal, files and storage, environments, tmux and etiquette. Ported from the handbook's Woody Guide, Volume 1. This is the simplest file to copy when writing a new course. |
-| `alphafold3.js` | **AlphaFold3 on Woody** (20 lessons, 7 modules). Setting up a run, the input JSON, every parameter, docking-style experiments, viewing and reading results, troubleshooting. |
-| `alphafold3-widgets.js` | The interactive tools used by the AlphaFold3 course: `jsonbuilder` (input JSON builder), `paramref` (parameter explorer, reused by other courses through `Hub.paramSets`), `cmdbuilder` (command builder with per-experiment recipes), `scorecalc` (ranking-score calculator), `resulttrainer` (results trainer) and `triage` (triage game). |
+| `alphafold3.js` | **AlphaFold3 on Woody** (21 lessons, 7 modules). Setting up a run, the input JSON, every parameter, docking-style experiments, viewing and reading results, troubleshooting. |
+| `alphafold3-widgets.js` | The interactive tools used by the AlphaFold3 course: `jsonbuilder` (input JSON builder), `paramref` (parameter explorer, reused by other courses through `Hub.paramSets`), `cmdbuilder` (command builder with per-experiment recipes), `scorecalc` (ranking-score calculator), `resulttrainer` (results trainer) and `triage` (triage game), and `samplesdemo` (what more diffusion samples do, using real scores). |
 | `boltz.js` | **Boltz-2 on Woody** (16 lessons, 7 modules). Includes MSA handling, affinity prediction, cyclic peptides and constraints. |
 | `boltz-widgets.js` | The Boltz-2 tools: `boltzyaml` (YAML builder), `boltzcmd` (command and parameter builder) and `boltzscore` (confidence-score calculator). |
 | `real-examples.js` | **Generated file. Do not edit by hand.** Real AlphaFold3 confidence data (PAE and per-residue pLDDT) for the FFA4 monomer and FFA4 with TUG-891, used by the results trainer. Produced by `../tools/extract_examples.py`. |

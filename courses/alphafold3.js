@@ -207,6 +207,43 @@
             ]
           },
           {
+            id: 'param-effects', title: 'What changing a parameter does', blocks: [
+              p('The explorer tells you what each setting is. This lesson is about what it <em>does to a run</em>, so you can choose between more seeds, more samples and more recycles without guessing.'),
+              h('Where the time and the choices go'),
+              table(['Stage', 'Runs on', 'Happens', 'You control it with'], [
+                ['1. Search for relatives (MSA, templates)', 'CPU', 'Once per protein sequence', 'The input JSON (empty MSA, supplied MSA); staging'],
+                ['2. The trunk: the network reads the MSA and refines its picture of the complex', 'GPU', '<strong>Once per seed</strong>, looped <code>num_recycles</code> + 1 times', '<code>modelSeeds</code>, <code>--num_seeds</code>, <code>--num_recycles</code>'],
+                ['3. Structure sampling (diffusion)', 'GPU', '<strong><code>num_diffusion_samples</code> times per seed</strong>, each from fresh random noise, all guided by the same trunk result', '<code>--num_diffusion_samples</code>'],
+                ['4. Ranking', 'CPU', 'Every sample is scored; the best by <code>ranking_score</code> becomes the top-level model', 'Nothing: it is automatic']
+              ]),
+              p('That is the whole picture. Stage 1 is the slow one for most jobs (about 440 s of the ~500 s for FFA4). Stages 2 and 3 are the GPU part.'),
+              h('Diffusion samples: independent draws'),
+              p('AF3 builds a structure by starting from random noise and removing it in about 200 small steps, steered by what the trunk worked out. Each sample is a separate trip from fresh noise to a structure. The samples <strong>do not refine one another</strong>, and the trunk is not re-run for them. So raising <code>num_diffusion_samples</code> does <strong>not</strong> make any individual structure more accurate. It gives you:'),
+              ul(['<strong>More draws to pick the best from.</strong> AF3 returns the highest-scoring one as the top model, so on average the best score creeps up as you ask for more draws.', '<strong>A picture of the spread.</strong> If the samples agree, the model is sure of itself. If they put the ligand in different places, it is not, and no single pose should be trusted.']),
+              widget('samplesdemo'),
+              p('Notice what the real numbers say: in both runs the five scores differ by only a couple of hundredths, and asking for more samples bought a small improvement. For a confident, well-folded target the extra samples mostly confirm what you already had. They matter most for floppy ligands and macrocycles, where the samples really do differ.'),
+              co('mistake', 'A higher best score is not a truer structure', '<p>AF3 picks the winner by its <em>own</em> confidence. Asking for 50 samples and taking the top score is choosing the sample AF3 likes best, not proving it is correct. Always look at how the samples spread, and check the pose against what you know.</p>'),
+              h('Seeds: full, separate runs'),
+              p('A seed starts the <strong>whole prediction again</strong>: trunk, recycling and all its samples. That is why seeds cost more GPU time than samples, and why they are the better test of reproducibility. If three seeds of the same job agree on a binding pose, you can trust that pose far more than if five samples from one seed agree, because they share the same trunk result.'),
+              table(['I want to&hellip;', 'Change', 'Why'], [
+                ['Look at a prediction quickly', 'Nothing (defaults), or fewer samples', 'The default of 5 is cheap'],
+                ['Report a number in a talk or paper', '3 to 5 seeds', 'Shows the result is reproducible'],
+                ['Explore alternative poses of a floppy ligand or macrocycle', 'More samples (10 to 20) and a few seeds', 'More draws from a flexible ensemble'],
+                ['Check I am not just seeing luck', 'More seeds, not more samples', 'Seeds re-run the trunk']
+              ]),
+              h('Recycles: leave them alone'),
+              p('<code>num_recycles</code> is how many times the trunk feeds its own output back in. 10 is what the model was developed with. Fewer is faster and unvalidated, and more is not known to help, so we do not change it.'),
+              h('Measure it yourself'),
+              p('We have not timed samples against seeds on Woody, and you should not take a time or memory figure on trust. AF3 prints its own timings, so this takes one short experiment. Use the ubiquitin job and stage it, so you do the CPU search only once:'),
+              ol_steps(['Run stage 1 on <code>ubiquitin_monomer</code> as in &ldquo;Splitting stages&rdquo;, to get its <code>_data.json</code>.', 'Run stage 2 three times from that file, with <code>--num_diffusion_samples=1</code>, then <code>5</code>, then <code>20</code>. Give each a different <code>--output_dir</code> (or job name) so they do not collide.', 'In each log, read the line <code>Running model inference with seed 1 took ... seconds</code> and the line <code>Extracting N inference samples with seed 1 took ... seconds</code>.', 'Open each <code>*_ranking_scores.csv</code> and compare the best score and the spread.']),
+              p('Write down what you see. Do not be surprised if the 20-sample best score is not higher than the 5-sample one: each run draws its own random numbers, so a bigger request is not simply the smaller one plus extras, and the gains are small. If a 20-sample run runs out of GPU memory, that is the memory cost showing itself: drop the sample count, or use the unified-memory settings from the explorer.'),
+              co('note', 'Further reading, if you want it', '<p>You do not need the paper to run AF3 well. If you want more depth:</p><ul><li>The <strong>AlphaFold 3 paper</strong>: Abramson et al., <em>Nature</em> 2024, <a href="https://nature.com/articles/s41586-024-07487-w" target="_blank" rel="noopener">nature.com/articles/s41586-024-07487-w</a>. Read the abstract and the confidence-metrics section first.</li><li>The <strong>official repository and docs</strong>: <a href="https://github.com/google-deepmind/alphafold3" target="_blank" rel="noopener">github.com/google-deepmind/alphafold3</a>. On Woody the same documents are in <code>~/alphafold3/docs/</code>: <code>input.md</code> (the JSON format), <code>output.md</code> (every output file and score) and <code>performance.md</code> (staging, memory, timings).</li><li>The Woody <code>~/af3/HOWTO.md</code>, which is the older single-page guide this course grew from.</li></ul>'),
+              check('Checkpoint', ['I can say which stage runs once per seed and which runs once per sample', 'I know more samples do not improve a single structure', 'I know seeds, not samples, are the better test of reproducibility', 'I know what to run to measure the cost myself']),
+              quiz('You want to know whether a predicted binding pose is reproducible. What is the better experiment?', ['Raise num_diffusion_samples to 50', 'Run five seeds and see whether the pose agrees', 'Raise num_recycles to 30'], 1, 'Each seed re-runs the trunk, so agreement between seeds is stronger evidence than agreement between samples that share one trunk result.'),
+              quiz('You raise num_diffusion_samples from 5 to 20. What can you expect for the best ranking_score?', ['It will always rise a lot', 'On average it creeps up a little, but each individual structure is no better', 'It will fall'], 1, 'More samples are more independent draws, so the best of them tends to be a little higher. Each sample is exactly as good as before.')
+            ]
+          },
+          {
             id: 'command-builder', title: 'The command builder', blocks: [
               p('Choose the recipe closest to your experiment and the builder produces the exact command. You can still tweak every field. Read the <em>Why this recipe</em> note each time: the point is to understand the choice, not just copy the output.'),
               widget('cmdbuilder'),
@@ -221,7 +258,7 @@
               p('Run once on your receptor plus any one ligand, with <code>--run_inference=false</code> and no GPU. The output folder gets a <code>&lt;name&gt;_data.json</code>: your input with the MSA and templates filled in.'),
               h('Stage 2: predict only'),
               p('Run inference with <code>--run_data_pipeline=false</code>, giving the <strong><code>_data.json</code></strong> as input. Using your original JSON here does not work, because it has no MSA in it.'),
-              co('mistake', 'Check this against the older HOWTO', '<p>The Woody HOWTO\'s staging example reuses the original JSON for stage 2. According to the AF3 docs (<code>docs/performance.md</code>) inference-only runs need the pre-computed MSAs in the input, i.e. the <code>_data.json</code>. Use the version in this course until the HOWTO is confirmed or corrected.</p>'),
+              co('note', 'Why the original file will not do', '<p>The AF3 docs (<code>docs/performance.md</code>) say inference-only runs need the pre-computed MSAs in the input, which is exactly what the <code>_data.json</code> holds. The Woody HOWTO\'s two-stage example uses the same form.</p>'),
               h('Swapping ligands without re-searching'),
               ol_steps(['Copy the stage-1 result: <code>cp ~/af3/output/NAME/NAME_data.json ~/af3/input/candidate_01.json</code>', 'Open it with <code>nano</code>. Change <code>"name"</code> to a new unique job name and replace the ligand\'s <code>smiles</code> only. Leave the protein\'s MSA and template fields untouched.', 'Run stage 2 on that file. Repeat for each candidate.']),
               co('practice', 'Rules of thumb', '<ul><li>Only the ligand changes: its entry has no MSA, so nothing needs re-searching.</li><li>If you change the <em>protein</em> sequence, you must redo the search.</li><li>Give every candidate a unique <code>name</code>, or the outputs will collide.</li></ul>'),

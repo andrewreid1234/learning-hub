@@ -30,7 +30,7 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
     if (/Widget error|Missing widget/.test(m.textContent)) R.errors.push('widget problem in ' + ids[i] + ': ' + m.textContent.match(/(Widget error|Missing widget)[^\n]{0,80}/)[0]);
     if (!m.querySelector('h1')) R.errors.push('no h1 ' + ids[i]);
   }
-  ok('lessons rendered', R.lessons >= 35, R.lessons);
+  ok('lessons rendered', R.lessons >= 50, R.lessons);
 
   // JSON builder presets
   location.hash = '#/alphafold3/ubiquitin'; await tick();
@@ -125,6 +125,11 @@ function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
   ok('boltz server warn', /--use_msa_server/.test(bcb.querySelector('pre').textContent) && /Data leaves Woody/.test(bcb.textContent));
   location.hash = '#/boltz/read'; await tick();
   ok('boltz score', /0\.92/.test(Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('How confidence_score') >= 0; }).textContent));
+  location.hash = '#/alphafold3/param-effects'; await tick();
+  var sd = Array.from(document.querySelectorAll('.card')).find(function (c) { return c.textContent.indexOf('What do more samples') >= 0; });
+  ok('samples demo draws', !!sd && /Best of 1: sample 0/.test(sd.textContent), sd && sd.textContent.match(/Best of \d[^.]*/)[0]);
+  var rg = sd.querySelector('input[type=range]'); rg.value = 5; rg.oninput();
+  ok('samples demo best of 5', /Best of 5: sample 2, ranking_score 0\.914/.test(sd.textContent), sd.textContent.match(/Best of \d[^.]*\.\d+/)[0]);
   location.hash = '#/boltz/param-explorer'; await tick();
   ok('boltz params', document.querySelectorAll('details.param').length >= 4);
   // OS switch

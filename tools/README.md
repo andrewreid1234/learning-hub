@@ -31,7 +31,7 @@ Wait about twenty seconds, then read the result and stop both programs with Ctrl
 python3 -c "import json; d = json.load(open('/tmp/selftest.json')); print('errors', d['errors'], 'lessons', d['lessons']); print([c for c in d['checks'] if c[0] != 'PASS'])"
 ```
 
-A healthy run prints `errors []`, a lesson count (52 at the time of writing) and an empty list of failures.
+A healthy run prints `errors []`, a lesson count (53 at the time of writing) and an empty list of failures.
 
 ## Gotchas
 

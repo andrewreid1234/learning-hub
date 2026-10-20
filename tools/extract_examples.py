@@ -23,12 +23,15 @@ def load(name):
     lig = [round(p, 1) for p, ch in zip(pl, ac) if ch == 'B']
     tr = c['token_res_ids']; tc = c['token_chain_ids']
     summ = {k: v for k, v in s.items() if k != 'chain_ids' and k != 'chain_pair_pae_min'}
+    # ranking_score of every sample (one seed), in the order AF3 wrote them, for the "what do more samples do" demo
+    rows = [l.strip().split(',') for l in open(f'{OUT}/{name}/{name}_ranking_scores.csv')][1:]
+    sample_scores = [round(float(r[2]), 6) for r in rows]
     return dict(name=name, n=n, tokenChains=tc, summary=summ,
                 paeB64=base64.b64encode(raw).decode(),
-                ligandPlddt=lig, residuePlddtA=prot, tokenResIds=tr)
+                ligandPlddt=lig, residuePlddtA=prot, tokenResIds=tr, sampleScores=sample_scores)
 data = {n: load(n) for n in ('ffa4_monomer', 'ffa4_tug891')}
 # atom-level pLDDT is long; reduce to per-residue means for chain A using atom->token map if present
-dst = os.path.expanduser('~/projects/learning-hub/courses/real-examples.js')
+dst = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'courses', 'real-examples.js')
 with open(dst, 'w') as f:
     f.write('window.AF3_REAL = ' + json.dumps(data, separators=(',', ':')) + ';\n')
 print('wrote', dst, os.path.getsize(dst))

@@ -9,7 +9,7 @@ Interactive, hands-on courses for the software the Jamieson group uses on **Wood
 | Course | Start here if | Lessons |
 |---|---|---|
 | **Using Woody** | You are new to Woody or to the Linux terminal. Take this first. | 16 |
-| **AlphaFold3 on Woody** | You need to predict a structure or a protein-ligand complex. | 20 |
+| **AlphaFold3 on Woody** | You need to predict a structure or a protein-ligand complex. | 21 |
 | **Boltz-2 on Woody** | You want a second predictor, or binding-affinity prediction. | 16 |
 
 Using Woody covers connecting, the terminal, files and storage, environments, tmux and shared-machine etiquette. The AlphaFold3 and Boltz-2 courses cover setting up a run, every parameter and how to tune it per experiment, and reading the results. They include interactive tools: an input builder, a parameter explorer, a command builder, a confidence-score trainer using real FFA4 outputs, and a triage game.

@@ -176,10 +176,10 @@
   /* ================= PARAMETER DATA ================= */
   var PARAMS = [
     { cat: 'Input JSON', name: 'modelSeeds', where: 'JSON', def: '[1]', ours: '1 to explore; 3-5 for anything you will report',
-      what: 'Random seeds for the structure-sampling (diffusion) step. Every seed gives its own set of predictions.',
+      what: 'Random seeds for the prediction. Each seed is a complete, separate run of the model and gives its own set of predictions.',
       why: 'AF3 is stochastic. For a confident prediction every seed agrees; for an uncertain one the seeds scatter, and that scatter is information.',
       change: 'Add seeds (e.g. [1,2,3,4,5]) when scores sit in the grey zone, when you want to know whether a binding pose is reproducible, or before putting a number in a talk. <code>--num_seeds=N</code> is a shortcut: give one seed in the JSON and AF3 generates the rest.',
-      cost: 'Inference time grows roughly in proportion to seeds x samples. The slow CPU search is done once, not per seed.' },
+      cost: 'Each seed repeats the model\'s full inference (the recycled trunk, then its samples), so GPU time grows roughly in proportion to the number of seeds. The slow CPU search is done once, not per seed.' },
     { cat: 'Input JSON', name: 'unpairedMsa / pairedMsa', where: 'JSON (per protein/RNA)', def: 'unset = search automatically', ours: 'leave unset',
       what: 'The multiple sequence alignment: evolutionary relatives of your sequence, which AF3 mines for structural clues. Unset = AF3 builds it. <code>""</code> = skip it. A string = supply your own A3M.',
       why: 'The MSA is the biggest source of accuracy for natural proteins, so we keep it on by default.',
@@ -205,10 +205,10 @@
       why: 'Without it every ligand is non-covalent.', change: 'Covalent inhibitors and glycans. See the reference section of the HOWTO for the format.', cost: 'None.' },
 
     { cat: 'Sampling', name: '--num_diffusion_samples', where: 'flag', def: '5', ours: '5 (default)',
-      what: 'How many structures are sampled per seed.',
+      what: 'How many structures are drawn per seed. Each one starts from its own random noise and is cleaned up (denoised) into a structure, guided by the same trunk result. They do not improve each other: they are independent draws.',
       why: 'Five gives you a spread to rank by <code>ranking_score</code> without wasting GPU time.',
-      change: 'Raise (10-20) with a few seeds when you want a fuller picture of alternative binding poses for a flexible ligand or macrocycle. Lower for a fast sanity check.',
-      cost: 'Inference time grows roughly in proportion to the number of samples.' },
+      change: 'Raise (10-20) with a few seeds when you want a fuller picture of alternative binding poses for a flexible ligand or macrocycle. Lower for a fast sanity check. More samples cannot make a single structure better, and AF3 picks the best by its own score, so it cannot prove a pose is right. See the lesson &ldquo;What changing a parameter does&rdquo;.',
+      cost: 'The expensive trunk pass runs once per seed and every sample is drawn from it, so extra samples cost less extra time than extra seeds. They are computed together, so a large number of samples may also need more GPU memory, which matters on our 24 GB cards. We have not timed this on Woody: the lesson shows how to.' },
     { cat: 'Sampling', name: '--num_recycles', where: 'flag', def: '10', ours: '10 (default)',
       what: 'How many times the network feeds its own output back in to refine itself.',
       why: 'The default is what AF3 was developed and validated with.',
@@ -386,6 +386,43 @@
     var foot = el('p', { style: 'font-size:.85rem;color:var(--muted)' }, 'Starting values are the real FFA4 + TUG-891 run: 0.8&times;0.94 + 0.2&times;0.87 + 0.5&times;0.05 = 0.95. For a single chain there is no ipTM, and AF3 uses pTM in its place (FFA4 alone: 0.8&times;0.88 + 0.2&times;0.88 + 0.5&times;0.06 = 0.91).');
     function calc() { var v = 0.8 * s.i + 0.2 * s.p + 0.5 * s.d - 100 * s.c; out.innerHTML = 'ranking_score = <strong style="color:' + (v > 0.8 ? 'var(--good)' : v > 0.6 ? 'var(--amber)' : 'var(--danger)') + '">' + v.toFixed(2) + '</strong>' + (s.c ? ' &nbsp;<span class="pill bad">a clash dominates everything</span>' : ''); }
     host.appendChild(foot); calc();
+  });
+
+  /* ================= WHAT DO MORE SAMPLES DO (real data) ================= */
+  Hub.widget('samplesdemo', function (host) {
+    var D = window.AF3_REAL;
+    host.appendChild(el('h4', null, 'What do more samples actually do?'));
+    if (!D || !D.ffa4_monomer.sampleScores) { host.appendChild(el('p', null, 'Real example data is missing.')); return; }
+    host.appendChild(el('p', { style: 'margin-top:0;color:var(--muted);font-size:.9rem' }, 'These are the real <code>ranking_score</code> values of the five samples from the two FFA4 runs on Woody (one seed, default settings). Drag the slider to pretend you only asked for that many samples, and see which one AF3 would hand you as the best.'));
+    var chips = el('div', { class: 'chips' }), body = el('div');
+    var names = [['ffa4_monomer', 'FFA4 alone'], ['ffa4_tug891', 'FFA4 + TUG-891']], cur = 'ffa4_monomer', n = 1;
+    names.forEach(function (x, i) {
+      var b = el('button', { type: 'button', class: i === 0 ? 'on' : '' }, esc(x[1]));
+      b.onclick = function () { Array.prototype.forEach.call(chips.children, function (c) { c.classList.toggle('on', c === b); }); cur = x[0]; draw(); };
+      chips.appendChild(b);
+    });
+    var lab = el('label', { class: 'f' }), r = el('input', { type: 'range', min: 1, max: 5, step: 1, value: 1, 'aria-label': 'Number of samples' });
+    lab.innerHTML = 'Samples requested: <strong></strong>'; r.style.width = '100%';
+    r.oninput = function () { n = parseInt(r.value, 10); draw(); };
+    host.appendChild(chips); host.appendChild(lab); host.appendChild(r); host.appendChild(body);
+    function draw() {
+      var sc = D[cur].sampleScores, lo = 0.85, hi = 0.97, best = -1, bi = 0;
+      for (var i = 0; i < n; i++) if (sc[i] > best) { best = sc[i]; bi = i; }
+      lab.querySelector('strong').textContent = n;
+      var html = '';
+      sc.forEach(function (v, i) {
+        var on = i < n, w = Math.max(2, Math.round(100 * (v - lo) / (hi - lo)));
+        html += '<div style="display:flex;align-items:center;gap:10px;margin:4px 0;opacity:' + (on ? 1 : .25) + '"><span class="mono" style="width:78px;font-size:.8rem">sample ' + i + '</span>' +
+          '<div style="flex:1;background:var(--line);border-radius:3px;height:16px"><i style="display:block;height:100%;width:' + w + '%;border-radius:3px;background:' + (on && i === bi ? 'var(--good)' : 'var(--teal)') + '"></i></div>' +
+          '<span class="mono" style="width:56px;text-align:right">' + v.toFixed(3) + '</span></div>';
+      });
+      var gain = best - sc[0];
+      html += '<p style="margin:12px 0 4px"><strong>Best of ' + n + ': sample ' + bi + ', ranking_score ' + best.toFixed(3) + '</strong>' +
+        (n > 1 ? ' (' + (gain > 0 ? '+' : '') + gain.toFixed(3) + ' compared with asking for just one)' : '') + '.</p>' +
+        '<p style="font-size:.85rem;color:var(--muted);margin:0">The scores of all five differ by only ' + (Math.max.apply(null, sc) - Math.min.apply(null, sc)).toFixed(3) + '. More samples did not make any one structure better: they gave AF3 more draws to choose the highest-scoring one from.</p>';
+      body.innerHTML = html;
+    }
+    draw();
   });
 
   /* ================= RESULTS TRAINER (real data) ================= */
